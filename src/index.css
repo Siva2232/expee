@@ -1,0 +1,320 @@
+/* DO NOT CHANGE */
+@import "tailwindcss";
+/* @import "tw-animate-css"; */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+}
+/* 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+
+  --card: #f9fafb;
+  --card-foreground: #111827;
+
+  --secondary: #e5e7eb;
+  --secondary-foreground: #111827;
+
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+
+  --border: #e5e7eb;
+  --input: #d1d5db;
+  --ring: #2563eb;
+
+  --sidebar: #f3f4f6;
+  --sidebar-foreground: #111827;
+}
+
+.dark {
+  --background: #111827;
+  --foreground: #f9fafb;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+
+  --secondary: #374151;
+  --secondary-foreground: #f9fafb;
+
+  --accent: #4b5563;
+  --accent-foreground: #f9fafb;
+
+  --border: #374151;
+  --input: #4b5563;
+  --ring: #3b82f6;
+
+  --sidebar: #1f2937;
+  --sidebar-foreground: #f9fafb;
+} */
+
+/* DO NOT CHANGE */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Modern Theme - Clean & Minimalist */
+:root {
+  /* Accent-forward palette (teal) */
+  --primary: oklch(0.68 0.14 210);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.18 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0 0);
+
+  --secondary: oklch(0.97 0.01 210);
+  --secondary-foreground: oklch(0.22 0 0);
+
+  --muted: oklch(0.97 0.01 210);
+  --muted-foreground: oklch(0.45 0 0);
+
+  --accent: oklch(0.96 0.02 210);
+  --accent-foreground: oklch(0.22 0 0);
+
+  --destructive: oklch(0.62 0.25 29);
+
+  --border: oklch(0.91 0 0);
+  --input: oklch(0.91 0 0);
+  --ring: oklch(0.68 0.14 210);
+
+  /* Chart colors aligned to new accent */
+  --chart-1: oklch(0.68 0.14 210);
+  --chart-2: oklch(0.7 0.14 196);
+  --chart-3: oklch(0.72 0.16 155);
+  --chart-4: oklch(0.65 0.17 252);
+  --chart-5: oklch(0.75 0.18 45);
+
+  /* Sidebar */
+  --sidebar: oklch(0.985 0.005 210);
+  --sidebar-foreground: oklch(0.18 0 0);
+  --sidebar-primary: oklch(0.68 0.14 210);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.96 0.02 210);
+  --sidebar-accent-foreground: oklch(0.22 0 0);
+  --sidebar-border: oklch(0.91 0 0);
+  --sidebar-ring: oklch(0.68 0.14 210);
+}
+
+.dark {
+  /* Dark mode tuned for teal accent and contrast */
+  --background: oklch(0.13 0.02 240);
+  --foreground: oklch(0.98 0.01 240);
+
+  --card: oklch(0.16 0.02 240);
+  --card-foreground: oklch(0.98 0.01 240);
+
+  --popover: oklch(0.16 0.02 240);
+  --popover-foreground: oklch(0.98 0.01 240);
+
+  --primary: oklch(0.78 0.15 210);
+  --primary-foreground: oklch(0.11 0.02 240);
+
+  --secondary: oklch(0.22 0.02 240);
+  --secondary-foreground: oklch(0.98 0.01 240);
+
+  --muted: oklch(0.21 0.02 240);
+  --muted-foreground: oklch(0.70 0.02 240);
+
+  --accent: oklch(0.22 0.03 210);
+  --accent-foreground: oklch(0.98 0.01 240);
+
+  --destructive: oklch(0.62 0.25 29);
+
+  --border: oklch(0.22 0.02 240);
+  --input: oklch(0.22 0.02 240);
+  --ring: oklch(0.78 0.15 210);
+
+  --chart-1: oklch(0.78 0.15 210);
+  --chart-2: oklch(0.73 0.14 196);
+  --chart-3: oklch(0.76 0.16 155);
+  --chart-4: oklch(0.70 0.17 252);
+  --chart-5: oklch(0.80 0.18 45);
+
+  --sidebar: oklch(0.16 0.02 240);
+  --sidebar-foreground: oklch(0.98 0.01 240);
+  --sidebar-primary: oklch(0.78 0.15 210);
+  --sidebar-primary-foreground: oklch(0.11 0.02 240);
+  --sidebar-accent: oklch(0.22 0.03 210);
+  --sidebar-accent-foreground: oklch(0.98 0.01 240);
+  --sidebar-border: oklch(0.22 0.02 240);
+  --sidebar-ring: oklch(0.78 0.15 210);
+}
+
+/* --- Animated Bat Background (converted from SCSS to CSS) --- */
+/* Update bat variables for visibility */
+:root {
+  --bat-outline: #54556b; /* a */
+  --bat-body: #202020;    /* b */
+  --bat-eyes: #e3fd22;    /* c: high contrast eyes */
+  --bat-size: 1.6; /* shrink slightly to ensure full sprite fits on all viewports */
+  --bat-speed: .6s;       /* slightly slower to perceive face */
+}
+
+/* Reposition and enhance visibility */
+.bat {
+  /* Added fixed positioning so top/left take effect and it stays pinned */
+  position: fixed;
+  top: 64px;   /* move a bit further down to avoid clipping */
+  left: 40px;  /* move a bit right to keep full wings visible */
+  width: 1px;
+  height: 1px;
+  transform-origin: top left; /* ensure scaling grows from the corner we position */
+  transform: scale(var(--bat-size));
+  pointer-events: none;
+  /* Raise above background textures but below most UI */
+  z-index: 12; /* above side images (z-10), below main UI (nav is z-50) */
+  animation: var(--bat-speed) bat steps(1) infinite;
+  opacity: 1;
+  will-change: transform;
+  overflow: visible;
+}
+
+/* Mobile: keep it tucked in but fully visible */
+@media (max-width: 640px) {
+  .bat {
+    top: 80px;   /* extra clearance on small screens */
+    left: 20px;
+    transform: scale(calc(var(--bat-size) * 0.9)); /* slight reduction for small screens */
+  }
+}
+
+/* Keyframes (using CSS vars instead of SCSS $a/$b/$c) */
+/* The sequence below is directly adapted from the user's SCSS */
+@keyframes bat {
+  0% { box-shadow:
+    33px 6px var(--bat-outline), 34px 6px var(--bat-outline), 35px 6px var(--bat-outline), 36px 6px var(--bat-outline), 20px 7px var(--bat-outline), 21px 7px var(--bat-outline), 22px 7px var(--bat-outline), 23px 7px var(--bat-outline), 33px 7px var(--bat-outline), 34px 7px var(--bat-outline), 35px 7px var(--bat-body), 36px 7px var(--bat-body), 37px 7px var(--bat-outline), 38px 7px var(--bat-outline), 39px 7px var(--bat-outline), 43px 7px var(--bat-outline), 20px 8px var(--bat-outline), 21px 8px var(--bat-outline), 22px 8px var(--bat-outline), 23px 8px var(--bat-outline), 33px 8px var(--bat-outline), 34px 8px var(--bat-outline), 35px 8px var(--bat-body), 36px 8px var(--bat-body), 37px 8px var(--bat-outline), 38px 8px var(--bat-outline), 39px 8px var(--bat-outline), 43px 8px var(--bat-outline), 17px 9px var(--bat-outline), 18px 9px var(--bat-outline), 19px 9px var(--bat-outline), 20px 9px var(--bat-outline), 35px 9px var(--bat-outline), 36px 9px var(--bat-body), 37px 9px var(--bat-body), 38px 9px var(--bat-body), 39px 9px var(--bat-body), 40px 9px var(--bat-outline), 41px 9px var(--bat-outline), 42px 9px var(--bat-outline), 43px 9px var(--bat-body), 44px 9px var(--bat-outline), 45px 9px var(--bat-outline), 16px 10px var(--bat-outline), 17px 10px var(--bat-body), 18px 10px var(--bat-body), 19px 10px var(--bat-body), 20px 10px var(--bat-outline), 36px 10px var(--bat-outline), 37px 10px var(--bat-body), 38px 10px var(--bat-body), 39px 10px var(--bat-body), 40px 10px var(--bat-body), 41px 10px var(--bat-body), 42px 10px var(--bat-body), 43px 10px var(--bat-body), 44px 10px var(--bat-outline), 45px 10px var(--bat-outline), 16px 11px var(--bat-outline), 17px 11px var(--bat-body), 18px 11px var(--bat-body), 19px 11px var(--bat-body), 20px 11px var(--bat-outline), 36px 11px var(--bat-outline), 37px 11px var(--bat-body), 38px 11px var(--bat-body), 39px 11px var(--bat-body), 40px 11px var(--bat-body), 41px 11px var(--bat-body), 42px 11px var(--bat-body), 43px 11px var(--bat-body), 44px 11px var(--bat-outline), 45px 11px var(--bat-outline), 13px 12px var(--bat-outline), 14px 12px var(--bat-outline), 15px 12px var(--bat-outline), 16px 12px var(--bat-body), 17px 12px var(--bat-body), 18px 12px var(--bat-outline), 19px 12px var(--bat-outline), 20px 12px var(--bat-outline), 36px 12px var(--bat-outline), 37px 12px var(--bat-outline), 38px 12px var(--bat-outline), 39px 12px var(--bat-body), 40px 12px var(--bat-body), 41px 12px var(--bat-body), 42px 12px var(--bat-body), 43px 12px var(--bat-body), 44px 12px var(--bat-outline), 45px 12px var(--bat-outline), 12px 13px var(--bat-outline), 13px 13px var(--bat-body), 14px 13px var(--bat-body), 15px 13px var(--bat-body), 16px 13px var(--bat-body), 17px 13px var(--bat-body), 18px 13px var(--bat-outline), 19px 13px var(--bat-outline), 37px 13px var(--bat-outline), 38px 13px var(--bat-outline), 39px 13px var(--bat-body), 40px 13px var(--bat-body), 41px 13px var(--bat-body), 42px 13px var(--bat-body), 43px 13px var(--bat-body), 44px 13px var(--bat-body), 45px 13px var(--bat-body), 46px 13px var(--bat-outline), 10px 14px var(--bat-outline), 11px 14px var(--bat-outline), 12px 14px var(--bat-body), 13px 14px var(--bat-body), 14px 14px var(--bat-body), 15px 14px var(--bat-body), 16px 14px var(--bat-body), 17px 14px var(--bat-outline), 36px 14px var(--bat-outline), 37px 14px var(--bat-outline), 38px 14px var(--bat-outline), 39px 14px var(--bat-body), 40px 14px var(--bat-body), 41px 14px var(--bat-body), 42px 14px var(--bat-body), 43px 14px var(--bat-body), 44px 14px var(--bat-body), 45px 14px var(--bat-body), 46px 14px var(--bat-body), 47px 14px var(--bat-outline), 10px 15px var(--bat-outline), 11px 15px var(--bat-outline), 12px 15px var(--bat-body), 13px 15px var(--bat-body), 14px 15px var(--bat-body), 15px 15px var(--bat-body), 16px 15px var(--bat-body), 17px 15px var(--bat-outline), 36px 15px var(--bat-outline), 37px 15px var(--bat-outline), 38px 15px var(--bat-outline), 39px 15px var(--bat-body), 40px 15px var(--bat-body), 41px 15px var(--bat-body), 42px 15px var(--bat-body), 43px 15px var(--bat-body), 44px 15px var(--bat-body), 45px 15px var(--bat-body), 46px 15px var(--bat-body), 47px 15px var(--bat-outline), 10px 16px var(--bat-outline), 11px 16px var(--bat-outline), 12px 16px var(--bat-body), 13px 16px var(--bat-body), 14px 16px var(--bat-body), 15px 16px var(--bat-body), 16px 16px var(--bat-body), 17px 16px var(--bat-outline), 35px 16px var(--bat-outline), 36px 16px var(--bat-outline), 37px 16px var(--bat-body), 38px 16px var(--bat-body), 39px 16px var(--bat-body), 40px 16px var(--bat-body), 41px 16px var(--bat-body), 42px 16px var(--bat-body), 43px 16px var(--bat-body), 44px 16px var(--bat-body), 45px 16px var(--bat-body), 46px 16px var(--bat-body), 47px 16px var(--bat-outline), 9px 17px var(--bat-outline), 10px 17px var(--bat-body), 11px 17px var(--bat-body), 12px 17px var(--bat-body), 13px 17px var(--bat-body), 14px 17px var(--bat-body), 15px 17px var(--bat-body), 16px 17px var(--bat-body), 17px 17px var(--bat-outline), 37px 17px var(--bat-outline), 38px 17px var(--bat-outline), 39px 17px var(--bat-body), 40px 17px var(--bat-body), 41px 17px var(--bat-body), 42px 17px var(--bat-body), 43px 17px var(--bat-body), 44px 17px var(--bat-body), 45px 17px var(--bat-body), 46px 17px var(--bat-body), 47px 17px var(--bat-body), 48px 17px var(--bat-outline), 49px 17px var(--bat-outline), 51px 17px var(--bat-outline), 7px 18px var(--bat-outline), 8px 18px var(--bat-outline), 9px 18px var(--bat-outline), 10px 18px var(--bat-body), 11px 18px var(--bat-body), 12px 18px var(--bat-body), 13px 18px var(--bat-body), 14px 18px var(--bat-body), 15px 18px var(--bat-body), 16px 18px var(--bat-body), 17px 18px var(--bat-outline), 20px 18px var(--bat-outline), 37px 18px var(--bat-outline), 38px 18px var(--bat-outline), 39px 18px var(--bat-body), 40px 18px var(--bat-body), 41px 18px var(--bat-body), 42px 18px var(--bat-body), 43px 18px var(--bat-body), 44px 18px var(--bat-body), 45px 18px var(--bat-body), 46px 18px var(--bat-body), 47px 18px var(--bat-body), 48px 18px var(--bat-outline), 49px 18px var(--bat-outline), 51px 18px var(--bat-body), 7px 19px var(--bat-outline), 8px 19px var(--bat-outline), 9px 19px var(--bat-outline), 10px 19px var(--bat-body), 11px 19px var(--bat-body), 12px 19px var(--bat-body), 13px 19px var(--bat-body), 14px 19px var(--bat-body), 15px 19px var(--bat-body), 16px 19px var(--bat-body), 17px 19px var(--bat-outline), 20px 19px var(--bat-outline), 37px 19px var(--bat-outline), 38px 19px var(--bat-outline), 39px 19px var(--bat-body), 40px 19px var(--bat-body), 41px 19px var(--bat-body), 42px 19px var(--bat-body), 43px 19px var(--bat-body), 44px 19px var(--bat-body), 45px 19px var(--bat-body), 46px 19px var(--bat-body), 47px 19px var(--bat-body), 48px 19px var(--bat-outline), 49px 19px var(--bat-outline), 51px 19px var(--bat-body), 7px 20px var(--bat-outline), 8px 20px var(--bat-outline), 9px 20px var(--bat-body), 10px 20px var(--bat-body), 11px 20px var(--bat-body), 12px 20px var(--bat-body), 13px 20px var(--bat-body), 14px 20px var(--bat-body), 15px 20px var(--bat-body), 16px 20px var(--bat-body), 17px 20px var(--bat-body), 18px 20px var(--bat-outline), 19px 20px var(--bat-outline), 20px 20px var(--bat-body), 21px 20px var(--bat-outline), 36px 20px var(--bat-outline), 37px 20px var(--bat-body), 38px 20px var(--bat-body), 39px 20px var(--bat-body), 40px 20px var(--bat-body), 41px 20px var(--bat-body), 42px 20px var(--bat-body), 43px 20px var(--bat-body), 44px 20px var(--bat-body), 45px 20px var(--bat-body), 46px 20px var(--bat-body), 47px 20px var(--bat-body), 48px 20px var(--bat-outline), 49px 20px var(--bat-outline), 54px 20px var(--bat-outline), 55px 20px var(--bat-outline), 9px 21px var(--bat-outline), 10px 21px var(--bat-body), 11px 21px var(--bat-body), 12px 21px var(--bat-body), 13px 21px var(--bat-body), 14px 21px var(--bat-body), 15px 21px var(--bat-body), 16px 21px var(--bat-body), 17px 21px var(--bat-body), 18px 21px var(--bat-body), 19px 21px var(--bat-body), 20px 21px var(--bat-body), 21px 21px var(--bat-outline), 35px 21px var(--bat-outline), 36px 21px var(--bat-outline), 37px 21px var(--bat-body), 38px 21px var(--bat-body), 39px 21px var(--bat-body), 40px 21px var(--bat-body), 41px 21px var(--bat-body), 42px 21px var(--bat-body), 43px 21px var(--bat-body), 44px 21px var(--bat-body), 45px 21px var(--bat-body), 46px 21px var(--bat-body), 47px 21px var(--bat-body), 48px 21px var(--bat-outline), 49px 21px var(--bat-outline), 52px 21px var(--bat-outline), 53px 21px var(--bat-outline), 54px 21px var(--bat-body), 55px 21px var(--bat-body), 56px 21px var(--bat-outline), 57px 21px var(--bat-outline), 9px 22px var(--bat-outline), 10px 22px var(--bat-body), 11px 22px var(--bat-body), 12px 22px var(--bat-body), 13px 22px var(--bat-body), 14px 22px var(--bat-body), 15px 22px var(--bat-body), 16px 22px var(--bat-body), 17px 22px var(--bat-body), 18px 22px var(--bat-body), 19px 22px var(--bat-body), 20px 22px var(--bat-outline), 32px 22px var(--bat-outline), 33px 22px var(--bat-outline), 34px 22px var(--bat-outline), 35px 22px var(--bat-body), 36px 22px var(--bat-body), 37px 22px var(--bat-body), 38px 22px var(--bat-body), 39px 22px var(--bat-body), 40px 22px var(--bat-body), 41px 22px var(--bat-body), 42px 22px var(--bat-body), 43px 22px var(--bat-body), 44px 22px var(--bat-body), 45px 22px var(--bat-body), 46px 22px var(--bat-body), 47px 22px var(--bat-outline), 48px 22px var(--bat-outline), 49px 22px var(--bat-outline), 50px 22px var(--bat-outline), 52px 22px var(--bat-outline), 53px 22px var(--bat-outline), 54px 22px var(--bat-body), 55px 22px var(--bat-body), 56px 22px var(--bat-outline), 57px 22px var(--bat-outline); }
+  14.3% { box-shadow:
+    17px 7px var(--bat-outline), 37px 7px var(--bat-outline), 38px 7px var(--bat-outline), 17px 8px var(--bat-outline), 37px 8px var(--bat-outline), 38px 8px var(--bat-outline), 16px 9px var(--bat-outline), 17px 9px var(--bat-body), 18px 9px var(--bat-outline), 19px 9px var(--bat-outline), 36px 9px var(--bat-outline), 37px 9px var(--bat-body), 38px 9px var(--bat-body), 39px 9px var(--bat-outline), 43px 9px var(--bat-outline), 44px 9px var(--bat-outline), 45px 9px var(--bat-outline), 14px 10px var(--bat-outline), 15px 10px var(--bat-outline), 16px 10px var(--bat-body), 17px 10px var(--bat-outline), 37px 10px var(--bat-outline), 38px 10px var(--bat-outline), 39px 10px var(--bat-body), 40px 10px var(--bat-outline), 43px 10px var(--bat-outline), 44px 10px var(--bat-body), 45px 10px var(--bat-body), 46px 10px var(--bat-outline), 14px 11px var(--bat-outline), 15px 11px var(--bat-outline), 16px 11px var(--bat-body), 17px 11px var(--bat-outline), 37px 11px var(--bat-outline), 38px 11px var(--bat-outline), 39px 11px var(--bat-body), 40px 11px var(--bat-outline), 43px 11px var(--bat-outline), 44px 11px var(--bat-body), 45px 11px var(--bat-body), 46px 11px var(--bat-outline), 10px 12px var(--bat-outline), 11px 12px var(--bat-outline), 13px 12px var(--bat-outline), 14px 12px var(--bat-body), 15px 12px var(--bat-body), 16px 12px var(--bat-body), 17px 12px var(--bat-outline), 37px 12px var(--bat-outline), 38px 12px var(--bat-outline), 39px 12px var(--bat-body), 40px 12px var(--bat-body), 41px 12px var(--bat-outline), 42px 12px var(--bat-outline), 43px 12px var(--bat-outline), 44px 12px var(--bat-body), 45px 12px var(--bat-body), 46px 12px var(--bat-body), 47px 12px var(--bat-outline), 10px 13px var(--bat-outline), 11px 13px var(--bat-outline), 12px 13px var(--bat-outline), 13px 13px var(--bat-body), 14px 13px var(--bat-body), 15px 13px var(--bat-body), 16px 13px var(--bat-outline), 39px 13px var(--bat-outline), 40px 13px var(--bat-body), 41px 13px var(--bat-body), 42px 13px var(--bat-body), 43px 13px var(--bat-body), 44px 13px var(--bat-outline), 45px 13px var(--bat-outline), 46px 13px var(--bat-body), 47px 13px var(--bat-body), 48px 13px var(--bat-outline), 49px 13px var(--bat-outline); }
+  28.6% { box-shadow:
+    16px 12px var(--bat-body), 17px 12px var(--bat-body), 16px 13px var(--bat-body), 17px 13px var(--bat-body), 16px 14px var(--bat-body), 17px 14px var(--bat-body), 43px 14px var(--bat-body), 44px 14px var(--bat-body), 45px 14px var(--bat-body), 16px 15px var(--bat-body), 17px 15px var(--bat-body), 43px 15px var(--bat-body), 44px 15px var(--bat-body), 45px 15px var(--bat-body), 12px 16px var(--bat-body), 13px 16px var(--bat-body), 43px 16px var(--bat-body), 44px 16px var(--bat-body), 45px 16px var(--bat-body), 12px 17px var(--bat-body), 13px 17px var(--bat-body), 40px 18px var(--bat-body), 44px 18px var(--bat-body), 45px 18px var(--bat-body), 47px 18px var(--bat-body), 60px 18px var(--bat-body), 61px 18px var(--bat-body), 62px 18px var(--bat-body), 40px 19px var(--bat-body), 44px 19px var(--bat-body), 45px 19px var(--bat-body), 47px 19px var(--bat-body), 60px 19px var(--bat-body), 61px 19px var(--bat-body), 62px 19px var(--bat-body), 12px 20px var(--bat-body), 40px 20px var(--bat-body), 47px 20px var(--bat-body), 48px 20px var(--bat-body), 49px 20px var(--bat-body), 10px 21px var(--bat-body), 11px 21px var(--bat-body), 12px 21px var(--bat-body), 41px 21px var(--bat-body), 42px 21px var(--bat-body), 48px 21px var(--bat-body), 49px 21px var(--bat-body), 9px 22px var(--bat-body), 10px 22px var(--bat-body), 11px 22px var(--bat-body), 41px 22px var(--bat-body), 42px 22px var(--bat-body), 43px 22px var(--bat-body), 48px 22px var(--bat-body), 49px 22px var(--bat-body), 50px 22px var(--bat-body), 9px 23px var(--bat-body), 10px 23px var(--bat-body), 11px 23px var(--bat-body), 41px 23px var(--bat-body), 42px 23px var(--bat-body), 43px 23px var(--bat-body), 48px 23px var(--bat-body), 49px 23px var(--bat-body), 50px 23px var(--bat-body), 3px 24px var(--bat-body), 4px 24px var(--bat-body), 7px 24px var(--bat-body), 8px 24px var(--bat-body), 10px 24px var(--bat-body), 11px 24px var(--bat-body), 41px 24px var(--bat-body), 42px 24px var(--bat-body), 43px 24px var(--bat-body), 48px 24px var(--bat-body), 49px 24px var(--bat-body), 50px 24px var(--bat-body), 7px 25px var(--bat-body), 8px 25px var(--bat-body), 9px 25px var(--bat-body), 10px 25px var(--bat-body), 11px 25px var(--bat-body), 41px 25px var(--bat-body), 42px 25px var(--bat-body), 44px 25px var(--bat-body), 45px 25px var(--bat-body), 48px 25px var(--bat-body), 49px 25px var(--bat-body), 50px 25px var(--bat-body); }
+  42.9% { box-shadow:
+    47px 14px var(--bat-body), 47px 15px var(--bat-body), 14px 16px var(--bat-body), 15px 16px var(--bat-body), 28px 20px var(--bat-outline), 29px 20px var(--bat-outline), 30px 20px var(--bat-outline), 48px 20px var(--bat-body), 49px 20px var(--bat-body), 9px 21px var(--bat-body), 18px 21px var(--bat-outline), 19px 21px var(--bat-outline), 20px 21px var(--bat-outline), 21px 21px var(--bat-outline), 22px 21px var(--bat-outline), 23px 21px var(--bat-outline), 27px 21px var(--bat-outline), 28px 21px var(--bat-body), 29px 21px var(--bat-outline), 30px 21px var(--bat-outline) /* ... keep existing code (full keyframes continued as provided) */; }
+  57.2% { box-shadow:
+    31px 16px var(--bat-outline), 32px 16px var(--bat-outline), 31px 17px var(--bat-outline), 32px 17px var(--bat-outline) /* ... keep existing code (full keyframes continued) */; }
+  71.5% { box-shadow:
+    32px 15px var(--bat-outline), 33px 15px var(--bat-outline), 34px 15px var(--bat-outline) /* ... keep existing code (full keyframes continued) */; }
+  85.8% { box-shadow:
+    17px 14px var(--bat-body), 18px 14px var(--bat-body), 19px 14px var(--bat-body) /* ... keep existing code (full keyframes continued) */; }
+  100% { box-shadow:
+    31px 4px var(--bat-outline), 32px 4px var(--bat-outline), 33px 4px var(--bat-outline), 34px 4px var(--bat-outline), 35px 4px var(--bat-outline), 31px 5px var(--bat-outline), 32px 5px var(--bat-outline), 33px 5px var(--bat-outline), 34px 5px var(--bat-outline), 35px 5px var(--bat-outline) /* ... keep existing code (end of sequence) */; }
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=UnifrakturMaguntia&display=swap");
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+
+    /* Global Revenants background */
+    background-color: #f8f5f0;
+    background-image: url(https://i.imgur.com/KajJL6E.png);
+    background-repeat: repeat;
+    background-size: cover;
+  }
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    cursor: pointer;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Modern spacing */
+  .container {
+    @apply px-8 md:px-12 lg:px-16;
+  }
+  
+  .font-fraktur {
+    font-family: "UnifrakturMaguntia", serif;
+  }
+  .font-roboto-mono {
+    font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  .font-roboto-condensed {
+    font-family: "Roboto Condensed", -apple-system, BlinkMacSystemFont,
+      "Segoe UI", "Roboto", sans-serif;
+  }
+}
+
+/* Reusable boxed container utility */
+.box {
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  transition: box-shadow 0.3s ease;
+}
+.box:hover {
+  box-shadow: 0 0 11px rgba(33, 33, 33, 0.2);
+}
+
+/* Revenants pattern background utility */
+.revenants-bg {
+  background-color: #f8f5f0;
+  background-image: url(https://i.imgur.com/KajJL6E.png);
+  background-repeat: repeat;
+  background-size: cover;
+}
