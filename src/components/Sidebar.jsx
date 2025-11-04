@@ -49,10 +49,10 @@ const Sidebar = () => {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-lg">
-            CP
+           C
           </div>
           <h1 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent">
-            Control Panel
+            Compass Travel Panel
           </h1>
         </div>
       </div>
