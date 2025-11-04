@@ -6,9 +6,9 @@ import { useBooking } from "../context/BookingContext";
 import { useExpense } from "../context/ExpenseContext";
 import {
   BarChart3, CalendarDays, CalendarRange, CalendarCheck, Receipt,
-  Download, Trash2, Plus, Tag
+  Download, Trash2, Plus, Tag, TrendingUp, DollarSign
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
 import { saveAs } from "file-saver";
 
@@ -54,7 +54,7 @@ const FundsDashboard = () => {
     return { daily, weekly, monthly, yearly };
   }, [bookings]);
 
-  // Profit = Revenue - Expenses
+  // Profit
   const profit = useMemo(() => ({
     daily: revenueByPeriod.daily - expenseTotal,
     weekly: revenueByPeriod.weekly - expenseTotal,
@@ -102,230 +102,299 @@ const FundsDashboard = () => {
     saveAs(blob, `financial-report-${format(new Date(), "yyyy-MM-dd")}.csv`);
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "daily": return <DailyFunds revenue={revenueByPeriod.daily} profit={profit.daily} bookingStats={bookingStats} />;
-      case "weekly": return <WeeklyFunds revenue={revenueByPeriod.weekly} profit={profit.weekly} />;
-      case "monthly": return <MonthlyFunds revenue={revenueByPeriod.monthly} profit={profit.monthly} />;
-      case "yearly": return <YearlyFunds revenue={revenueByPeriod.yearly} profit={profit.yearly} />;
-      case "expenses": return (
-        <ExpenseTracker
-          expenses={expenses}
-          removeExpense={removeExpense}
-          handleAddExpense={handleAddExpense}
-          desc={desc} setDesc={setDesc}
-          amount={amount} setAmount={setAmount}
-          category={category} setCategory={setCategory}
-          expenseTotal={expenseTotal}
-          categoryTotals={categoryTotals}
-          exportCSV={exportCSV}
-        />
-      );
-      default: return null;
-    }
-  };
-
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
 
-          {/* Header */}
-          <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Funds & Profit Center
-                </h1>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">
-                  {bookingStats.count} bookings • ₹{bookingStats.total.toLocaleString()} revenue • ₹{expenseTotal.toLocaleString()} spent
+          {/* === PREMIUM HEADER === */}
+          <motion.header
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 shadow-2xl text-white"
+          >
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute -top-20 -left-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+              <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+            </div>
+
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="w-10 h-10 text-white/90" />
+                  <h1 className="text-4xl lg:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100 animate-gradient-x">
+                    Funds & Profit Center
+                  </h1>
+                </div>
+                <p className="text-lg text-blue-50 max-w-md">
+                  Real-time financial insights, profit tracking, and expense management.
                 </p>
+
+                <div className="flex flex-wrap items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                    <TrendingUp size={18} className="text-green-300" />
+                    <span className="font-semibold">{bookingStats.count}</span>
+                    <span className="text-blue-100">Bookings</span>
+                  </div>
+                  <div className="text-blue-100">
+                    ₹{bookingStats.total.toLocaleString()} revenue • ₹{expenseTotal.toLocaleString()} spent
+                  </div>
+                </div>
               </div>
+
               <button
                 onClick={exportCSV}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm"
+                className="group relative inline-flex items-center gap-3 px-6 py-3.5 bg-white text-indigo-600 font-semibold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden"
               >
-                <Download size={16} /> Export CSV
+                <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-50 transition-opacity"></span>
+                <Download size={22} className="relative z-10" />
+                <span className="relative z-10">Export Report</span>
               </button>
             </div>
           </motion.header>
 
-          {/* Tab Bar */}
-          <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all ${
-                    activeTab === tab.id
-                      ? "bg-white text-blue-600 border-t-2 border-x border-gray-200"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <Icon size={16} />
-                  {tab.label}
-                </button>
-              );
-            })}
+          {/* === ANIMATED TAB BAR === */}
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2">
+            <div className="flex flex-wrap gap-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex items-center gap-2.5 px-5 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
+                      isActive
+                        ? "text-indigo-600 shadow-md"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl -z-10"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Content */}
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {renderContent()}
-          </motion.div>
+          {/* === ANIMATED CONTENT === */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {activeTab === "daily" && <DailyFunds revenue={revenueByPeriod.daily} profit={profit.daily} bookingStats={bookingStats} />}
+              {activeTab === "weekly" && <WeeklyFunds revenue={revenueByPeriod.weekly} profit={profit.weekly} />}
+              {activeTab === "monthly" && <MonthlyFunds revenue={revenueByPeriod.monthly} profit={profit.monthly} />}
+              {activeTab === "yearly" && <YearlyFunds revenue={revenueByPeriod.yearly} profit={profit.yearly} />}
+              {activeTab === "expenses" && (
+                <ExpenseTracker
+                  expenses={expenses}
+                  removeExpense={removeExpense}
+                  handleAddExpense={handleAddExpense}
+                  desc={desc} setDesc={setDesc}
+                  amount={amount} setAmount={setAmount}
+                  category={category} setCategory={setCategory}
+                  expenseTotal={expenseTotal}
+                  categoryTotals={categoryTotals}
+                  exportCSV={exportCSV}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
 
         </div>
       </div>
+
+      {/* === CSS ANIMATIONS === */}
+      <style jsx>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 8s ease infinite;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };
 
-// Daily Funds
+// === ENHANCED COMPONENTS ===
+
 const DailyFunds = ({ revenue, profit, bookingStats }) => (
   <div className="space-y-8">
-    <h2 className="text-xl font-semibold text-gray-800">Daily Overview</h2>
-    <div className="grid md:grid-cols-4 gap-6">
-      <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-2xl text-white shadow-lg">
-        <p className="text-sm opacity-90">Revenue</p>
-        <p className="text-2xl font-bold">₹{revenue.toLocaleString()}</p>
-      </div>
-      <div className="bg-gradient-to-br from-red-500 to-rose-600 p-5 rounded-2xl text-white shadow-lg">
-        <p className="text-sm opacity-90">Expenses</p>
-        <p className="text-2xl font-bold">₹{(revenue - profit).toLocaleString()}</p>
-      </div>
-      <div className={`p-5 rounded-2xl text-white shadow-lg ${profit >= 0 ? "bg-gradient-to-br from-lime-500 to-green-600" : "bg-gradient-to-br from-orange-500 to-red-600"}`}>
-        <p className="text-sm opacity-90">Net Profit</p>
-        <p className="text-2xl font-bold">₹{profit.toLocaleString()}</p>
-      </div>
-      <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-5 rounded-2xl text-white shadow-lg">
-        <p className="text-sm opacity-90">Avg Booking</p>
-        <p className="text-2xl font-bold">₹{bookingStats.avg}</p>
-      </div>
+    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+      <BarChart3 className="text-indigo-600" /> Daily Overview
+    </h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[
+        { label: "Revenue", value: revenue, gradient: "from-emerald-500 to-teal-600" },
+        { label: "Expenses", value: revenue - profit, gradient: "from-rose-500 to-pink-600" },
+        { label: "Net Profit", value: profit, gradient: profit >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600" },
+        { label: "Avg Booking", value: bookingStats.avg, gradient: "from-blue-500 to-indigo-600" },
+      ].map((stat, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: i * 0.1 }}
+          className={`bg-gradient-to-br ${stat.gradient} p-6 rounded-2xl text-white shadow-xl backdrop-blur-sm`}
+        >
+          <p className="text-white/80 text-sm font-medium">{stat.label}</p>
+          <p className="text-3xl font-bold mt-1">₹{stat.value.toLocaleString()}</p>
+        </motion.div>
+      ))}
     </div>
-    <div className="h-80"><FundsChart period="daily" /></div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.4 }}
+      className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+    >
+      <div className="h-80"><FundsChart period="daily" /></div>
+    </motion.div>
   </div>
 );
 
-// Weekly/Monthly/Yearly Funds
-const WeeklyFunds = ({ revenue, profit }) => (
-  <div className="space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800">Weekly Funds</h2>
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
-      <div className="h-64 sm:h-80"><FundsChart period="weekly" /></div>
-      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-        <div><strong>Revenue:</strong> ₹{revenue.toLocaleString()}</div>
-        <div><strong>Profit:</strong> <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>₹{profit.toLocaleString()}</span></div>
+const WeeklyFunds = ({ revenue, profit }) => <PeriodCard title="Weekly" revenue={revenue} profit={profit} period="weekly" />;
+const MonthlyFunds = ({ revenue, profit }) => <PeriodCard title="Monthly" revenue={revenue} profit={profit} period="monthly" />;
+const YearlyFunds = ({ revenue, profit }) => <PeriodCard title="Yearly" revenue={revenue} profit={profit} period="yearly" />;
+
+const PeriodCard = ({ title, revenue, profit, period }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="space-y-6"
+  >
+    <h2 className="text-2xl font-bold text-gray-800">{title} Performance</h2>
+    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+      <div className="h-80"><FundsChart period={period} /></div>
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 text-lg font-medium">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Revenue:</span>
+          <span className="text-emerald-600">₹{revenue.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Profit:</span>
+          <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>
+            ₹{profit.toLocaleString()}
+          </span>
+        </div>
       </div>
     </div>
-  </div>
+  </motion.div>
 );
 
-const MonthlyFunds = ({ revenue, profit }) => (
-  <div className="space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800">Monthly Funds</h2>
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
-      <div className="h-64 sm:h-80"><FundsChart period="monthly" /></div>
-      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-        <div><strong>Revenue:</strong> ₹{revenue.toLocaleString()}</div>
-        <div><strong>Profit:</strong> <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>₹{profit.toLocaleString()}</span></div>
-      </div>
-    </div>
-  </div>
-);
-
-const YearlyFunds = ({ revenue, profit }) => (
-  <div className="space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800">Yearly Funds</h2>
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
-      <div className="h-64 sm:h-80"><FundsChart period="yearly" /></div>
-      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-        <div><strong>Revenue:</strong> ₹{revenue.toLocaleString()}</div>
-        <div><strong>Profit:</strong> <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>₹{profit.toLocaleString()}</span></div>
-      </div>
-    </div>
-  </div>
-);
-
-// Expense Tracker
-const ExpenseTracker = ({ expenses, removeExpense, handleAddExpense, desc, setDesc, amount, setAmount, category, setCategory, expenseTotal, categoryTotals, exportCSV }) => (
+const ExpenseTracker = ({ expenses, removeExpense, handleAddExpense, desc, setDesc, amount, setAmount, category, setCategory, expenseTotal, categoryTotals }) => (
   <div className="space-y-8">
-    <div className="flex justify-between items-center">
-      <h2 className="text-xl font-semibold text-gray-800">Expense Tracker</h2>
-      <div className="text-lg font-bold text-red-600">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+        <Receipt className="text-rose-600" /> Expense Tracker
+      </h2>
+      <div className="text-xl font-bold text-rose-600">
         Total: ₹{expenseTotal.toLocaleString()}
       </div>
     </div>
 
-    <form onSubmit={handleAddExpense} className="bg-white p-5 rounded-2xl shadow-lg border border-gray-200">
+    <motion.form
+      onSubmit={handleAddExpense}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+    >
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <input type="text" placeholder="Description" value={desc} onChange={e => setDesc(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white" />
-        <input type="number" min="0.01" step="0.01" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white" />
-        <select value={category} onChange={e => setCategory(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white">
+        <input
+          type="text"
+          placeholder="Description"
+          value={desc}
+          onChange={e => setDesc(e.target.value)}
+          className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+        />
+        <input
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="Amount"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+        />
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
+        >
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <button type="submit" className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          <Plus size={18} /> Add
+        <button
+          type="submit"
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-medium rounded-xl hover:from-indigo-700 hover:to-blue-700 transform hover:scale-105 transition shadow-md"
+        >
+          <Plus size={20} /> Add Expense
         </button>
       </div>
-    </form>
+    </motion.form>
 
-    <div className="bg-white p-5 rounded-2xl shadow-lg border border-gray-200">
-      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-        <Tag size={18} /> Top Expense Categories
-      </h3>
-      <div className="space-y-2">
-        {categoryTotals.map((c, i) => (
-          <div key={i} className="flex justify-between text-sm">
-            <span className="font-medium">{c.name}</span>
-            <span className="text-red-600">-₹{c.amount.toLocaleString()}</span>
-          </div>
-        ))}
+    <div className="grid md:grid-cols-2 gap-6">
+      <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Tag className="text-indigo-600" /> Top Categories
+        </h3>
+        <div className="space-y-3">
+          {categoryTotals.map((c, i) => (
+            <div key={i} className="flex justify-between items-center">
+              <span className="font-medium text-gray-700">{c.name}</span>
+              <span className="text-rose-600 font-bold">-₹{c.amount.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
 
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-      <div className="max-h-96 overflow-y-auto">
-        {expenses.length === 0 ? (
-          <p className="p-8 text-center text-gray-500">No expenses recorded</p>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {expenses.map(e => (
-                <tr key={e.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-600">{format(new Date(e.date), "MMM d")}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{e.description}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
-                      {e.category || "Other"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-red-600">-₹{e.amount.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => removeExpense(e.id)} className="text-red-600 hover:text-red-800">
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
+      <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <h3 className="text-lg font-semibold mb-4">Recent Expenses</h3>
+        <div className="max-h-64 overflow-y-auto">
+          {expenses.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No expenses yet</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-gray-500 border-b">
+                  <th className="pb-2">Date</th>
+                  <th className="pb-2">Desc</th>
+                  <th className="pb-2">Amt</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {expenses.slice(0, 5).map(e => (
+                  <tr key={e.id} className="border-b hover:bg-gray-50 transition">
+                    <td className="py-2 text-gray-600">{format(new Date(e.date), "MMM d")}</td>
+                    <td className="py-2 font-medium">{e.description}</td>
+                    <td className="py-2 text-rose-600 font-medium">-₹{e.amount.toFixed(0)}</td>
+                    <td className="py-2 text-right">
+                      <button onClick={() => removeExpense(e.id)} className="text-red-500 hover:text-red-700">
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   </div>

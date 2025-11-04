@@ -2,19 +2,21 @@
 import { useState, useMemo } from "react";
 import StatusBadge from "../../components/StatusBadge";
 import { format } from "date-fns";
-import { Plane, Bus, Train } from "lucide-react";
+import { Plane, Bus, Train, CheckCircle, XCircle } from "lucide-react";
 
 const categoryIcons = {
   flight: { icon: Plane, color: "bg-blue-100 text-blue-700" },
-  bus: { icon: Bus, color: "bg-emerald-100 text-emerald-700" },
-  train: { icon: Train, color: "bg-purple-100 text-purple-700" },
+  bus:    { icon: Bus,  color: "bg-emerald-100 text-emerald-700" },
+  train:  { icon: Train,color: "bg-purple-100 text-purple-700" },
 };
 
 const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
 
-  // Filter by search + category
+  // --------------------------------------------------------------
+  // 1. Filter by search + category
+  // --------------------------------------------------------------
   const filteredBookings = useMemo(() => {
     let result = bookings;
 
@@ -27,9 +29,9 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter((b) => {
-        const name = (b.customerName ?? "").toLowerCase();
+        const name  = (b.customerName ?? "").toLowerCase();
         const email = (b.email ?? "").toLowerCase();
-        const id = (b.id ?? "").toLowerCase();
+        const id    = (b.id ?? "").toLowerCase();
         return name.includes(term) || email.includes(term) || id.includes(term);
       });
     }
@@ -37,9 +39,17 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
     return result;
   }, [bookings, searchTerm, filterCategory]);
 
+  // --------------------------------------------------------------
+  // 2. Helper: toggle status (pending <-> confirmed)
+  // --------------------------------------------------------------
+  const toggleStatus = (id, current) => {
+    const next = current === "confirmed" ? "pending" : "confirmed";
+    onUpdateStatus(id, next);
+  };
+
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
-      {/* Filters */}
+      {/* ---------------------- FILTERS ---------------------- */}
       <div className="p-4 bg-gray-50 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -67,7 +77,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* ---------------------- TABLE ---------------------- */}
       <table className="min-w-full">
         <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wider">
           <tr>
@@ -92,6 +102,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
           ) : (
             filteredBookings.map((booking, idx) => {
               const cat = categoryIcons[booking.category] || categoryIcons.bus;
+              const isConfirmed = booking.status === "confirmed";
 
               return (
                 <tr key={booking.id} className="hover:bg-gray-50 transition">
@@ -107,9 +118,13 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
 
                   {/* Category Badge */}
                   <td className="py-3 px-4">
-                    <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium ${cat.color}`}>
+                    <div
+                      className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium ${cat.color}`}
+                    >
                       <cat.icon size={14} />
-                      {booking.category ? booking.category.charAt(0).toUpperCase() + booking.category.slice(1) : "N/A"}
+                      {booking.category
+                        ? booking.category.charAt(0).toUpperCase() + booking.category.slice(1)
+                        : "N/A"}
                     </div>
                   </td>
 
@@ -125,26 +140,36 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
                     <StatusBadge status={booking.status ?? "pending"} />
                   </td>
 
+                  {/* ---------------------- ACTIONS ---------------------- */}
                   <td className="py-3 px-4 text-right space-x-2">
+                    {/* Confirm / Unconfirm */}
                     <button
-                      onClick={() =>
-                        onUpdateStatus(
-                          booking.id,
-                          booking.status === "confirmed" ? "pending" : "confirmed"
-                        )
-                      }
-                      className={`text-xs px-3 py-1 rounded-md transition ${
-                        booking.status === "confirmed"
+                      onClick={() => toggleStatus(booking.id, booking.status)}
+                      className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-md transition ${
+                        isConfirmed
                           ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                           : "bg-green-100 text-green-700 hover:bg-green-200"
                       }`}
+                      title={isConfirmed ? "Mark as Pending" : "Mark as Confirmed"}
                     >
-                      {booking.status === "confirmed" ? "Unconfirm" : "Confirm"}
+                      {isConfirmed ? (
+                        <>
+                          <XCircle size={14} />
+                          Unconfirm
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={14} />
+                          Confirm
+                        </>
+                      )}
                     </button>
 
+                    {/* Delete */}
                     <button
                       onClick={() => onRemove(booking.id)}
-                      className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition"
+                      className="inline-flex items-center gap-1.5 text-xs px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition"
+                      title="Delete booking"
                     >
                       Delete
                     </button>

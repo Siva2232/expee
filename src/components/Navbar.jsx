@@ -25,7 +25,7 @@ const Navbar = () => {
             </div>
           </div>
           <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Booking & Funds Tracker
+            CRM Compass Travel
           </h1>
         </motion.div>
 

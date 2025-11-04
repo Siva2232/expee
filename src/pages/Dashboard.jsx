@@ -11,7 +11,7 @@ import {
   Download, Search, Clock, UserCheck, FileText,
   ArrowUpRight, ArrowDownRight, Receipt, AlertTriangle
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   format,
   startOfMonth,
@@ -40,18 +40,16 @@ const Dashboard = () => {
     return { start: startOfMonth(prev), end: endOfMonth(prev) };
   }, []);
 
-  // Filter by date range
+  // Filter by range
   const filterByRange = (items, range) =>
     items.filter(item => {
       const d = new Date(item.date);
       return isWithinInterval(d, { start: range.start, end: range.end });
     });
 
-  // Bookings
+  // Data
   const currentBookings = filterByRange(bookings, currentPeriod);
   const previousBookings = filterByRange(bookings, previousPeriod);
-
-  // Expenses
   const currentExpenses = filterByRange(expenses, currentPeriod);
   const previousExpenses = filterByRange(expenses, previousPeriod);
 
@@ -64,7 +62,7 @@ const Dashboard = () => {
     const count = currentBookings.length;
     const avg = count > 0 ? total / count : 0;
     const highest = currentBookings.reduce((m, b) => Math.max(m, b.amount || 0), 0);
-    return { total, count, avg, highest };
+    return { total, count, avg: Math.round(avg), highest };
   }, [currentBookings]);
 
   // Previous Stats
@@ -73,12 +71,12 @@ const Dashboard = () => {
     const count = previousBookings.length;
     const avg = count > 0 ? total / count : 0;
     const highest = previousBookings.reduce((m, b) => Math.max(m, b.amount || 0), 0);
-    return { total, count, avg, highest };
+    return { total, count, avg: Math.round(avg), highest };
   }, [previousBookings]);
 
   // Trend Calculator
   const calcTrend = (cur, prev) => {
-    if (prev === 0) return { value: "0%", change: 0, isPositive: false };
+    if (prev === 0) return { value: "N/A", change: 0, isPositive: false };
     const change = ((cur - prev) / prev) * 100;
     const isPositive = change >= 0;
     return {
@@ -93,7 +91,7 @@ const Dashboard = () => {
     revenue: calcTrend(currentStats.total, previousStats.total),
     avgBooking: calcTrend(currentStats.avg, previousStats.avg),
     highest: currentStats.highest > previousStats.highest
-      ? { value: "New", change: 100, isPositive: true }
+      ? { value: "New Record", change: 100, isPositive: true }
       : { value: "–", change: 0, isPositive: false },
     expenses: calcTrend(currentExpenseTotal, prevExpenseTotal),
     profit: calcTrend(
@@ -102,52 +100,14 @@ const Dashboard = () => {
     ),
   };
 
-  // Stats with Progress Bars
+  // Stats Cards
   const stats = [
-    {
-      title: "Total Bookings",
-      value: currentStats.count,
-      trend: trends.bookings,
-      icon: Calendar,
-      color: "from-violet-500 to-purple-600",
-    },
-    {
-      title: "Total Revenue",
-      value: `$${currentStats.total.toLocaleString()}`,
-      trend: trends.revenue,
-      icon: DollarSign,
-      color: "from-emerald-500 to-teal-600",
-    },
-    {
-      title: "Avg Booking",
-      value: `$${Math.round(currentStats.avg)}`,
-      trend: trends.avgBooking,
-      icon: TrendingUp,
-      color: "from-cyan-500 to-blue-600",
-    },
-    {
-      title: "Highest Booking",
-      value: `$${currentStats.highest.toLocaleString()}`,
-      trend: trends.highest,
-      icon: AlertTriangle,
-      color: "from-amber-500 to-orange-600",
-    },
-    {
-      title: "Total Expenses",
-      value: `$${currentExpenseTotal.toLocaleString()}`,
-      trend: trends.expenses,
-      icon: Receipt,
-      color: "from-red-500 to-rose-600",
-    },
-    {
-      title: "Net Profit",
-      value: `$${(currentStats.total - currentExpenseTotal).toLocaleString()}`,
-      trend: trends.profit,
-      icon: Activity,
-      color: currentStats.total - currentExpenseTotal >= 0
-        ? "from-lime-500 to-green-600"
-        : "from-orange-500 to-red-600",
-    },
+    { title: "Total Bookings", value: currentStats.count, trend: trends.bookings, icon: Calendar, gradient: "from-violet-500 to-purple-600" },
+    { title: "Total Revenue", value: `₹${currentStats.total.toLocaleString()}`, trend: trends.revenue, icon: DollarSign, gradient: "from-emerald-500 to-teal-600" },
+    { title: "Avg Booking", value: `₹${currentStats.avg.toLocaleString()}`, trend: trends.avgBooking, icon: TrendingUp, gradient: "from-cyan-500 to-blue-600" },
+    { title: "Highest Booking", value: `₹${currentStats.highest.toLocaleString()}`, trend: trends.highest, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
+    { title: "Total Expenses", value: `₹${currentExpenseTotal.toLocaleString()}`, trend: trends.expenses, icon: Receipt, gradient: "from-rose-500 to-red-600" },
+    { title: "Net Profit", value: `₹${(currentStats.total - currentExpenseTotal).toLocaleString()}`, trend: trends.profit, icon: Activity, gradient: (currentStats.total - currentExpenseTotal >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600") },
   ];
 
   // Filtered Bookings
@@ -156,7 +116,7 @@ const Dashboard = () => {
       const matchesSearch =
         b.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.id?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesFilter = filterStatus === "all" || b.status === filterStatus;
+      const matchesFilter = filterStatus === "all" || (b.status?.toLowerCase() === filterStatus.toLowerCase());
       return matchesSearch && matchesFilter;
     });
   }, [bookings, searchTerm, filterStatus]);
@@ -165,90 +125,98 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
 
-          {/* Header */}
+          {/* === PREMIUM HEADER === */}
           <motion.header
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
+            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 shadow-2xl text-white"
           >
-            <div>
-              {/* UPDATED: Shows only "Admin1" or "Admin2" */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Welcome back, {user?.name?.replace("Compass ", "") || "Admin"}
-              </h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
-                Live booking & financial monitoring
-              </p>
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute -top-20 -left-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+              <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <span>Live • {format(new Date(), "h:mm a")}</span>
+
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Activity className="w-10 h-10 text-white/90" />
+                  <h1 className="text-4xl lg:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100 animate-gradient-x">
+                    Welcome back, {user?.name?.replace("Compass ", "") || "Admin"}
+                  </h1>
+                </div>
+                <p className="text-lg text-blue-50">
+                  Live financial & booking insights
+                </p>
+                <div className="flex items-center gap-2 text-sm bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full w-fit">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>Live • {format(new Date(), "h:mm a")}</span>
+                </div>
               </div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm">
-                <Download size={16} />
-                Export Report
+
+              <button className="group relative inline-flex items-center gap-3 px-6 py-3.5 bg-white text-indigo-600 font-semibold rounded-xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden">
+                <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-50 transition-opacity"></span>
+                <Download size={22} className="relative z-10" />
+                <span className="relative z-10">Export Report</span>
               </button>
             </div>
           </motion.header>
 
-          {/* Stats Grid – 6 Cards with Progress Bars */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+          {/* === STATS CARDS === */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
             {stats.map((stat, i) => (
               <motion.div
                 key={stat.title}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -6, scale: 1.02 }}
+                whileHover={{ y: -8, scale: 1.03 }}
                 className="group relative"
               >
-                <div className="relative overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
+                <div className="relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm p-6 shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
                   
                   <div className="flex justify-between items-start mb-3">
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.color} text-white shadow-lg`}>
-                      <stat.icon size={20} />
+                    <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} text-white shadow-md`}>
+                      <stat.icon size={22} />
                     </div>
                     <div className="flex items-center gap-1 text-xs font-bold">
-                      {stat.trend.value === "New" ? (
+                      {stat.trend.value === "New Record" ? (
                         <AlertTriangle size={14} className="text-amber-600" />
-                      ) : stat.trend.value === "–" ? (
+                      ) : stat.trend.value === "–" || stat.trend.value === "N/A" ? (
                         <span className="text-gray-500">–</span>
                       ) : stat.trend.isPositive ? (
                         <ArrowUpRight size={14} className="text-emerald-600" />
                       ) : (
-                        <ArrowDownRight size={14} className="text-red-600" />
+                        <ArrowDownRight size={14} className="text-rose-600" />
                       )}
                       <span className={
-                        stat.trend.value === "New" ? "text-amber-600" :
-                        stat.trend.value === "–" ? "text-gray-500" :
-                        stat.trend.isPositive ? "text-emerald-600" :
-                        "text-red-600"
+                        stat.trend.value === "New Record" ? "text-amber-600" :
+                        stat.trend.value === "–" || stat.trend.value === "N/A" ? "text-gray-500" :
+                        stat.trend.isPositive ? "text-emerald-600" : "text-rose-600"
                       }>
                         {stat.trend.value}
                       </span>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-gray-600 font-medium">{stat.title}</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-sm text-gray-600 font-medium">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
 
-                  {/* Progress Bar */}
+                  {/* Animated Progress Bar */}
                   {stat.trend.change > 0 && (
-                    <div className="mt-3">
+                    <div className="mt-4">
                       <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.min(stat.trend.change, 100)}%` }}
-                          transition={{ duration: 0.8, delay: 0.3 }}
+                          transition={{ duration: 1, delay: 0.3 }}
                           className={`h-full rounded-full ${
                             stat.trend.isPositive
                               ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                              : "bg-gradient-to-r from-red-500 to-rose-500"
+                              : "bg-gradient-to-r from-rose-500 to-red-500"
                           }`}
                         />
                       </div>
@@ -259,32 +227,30 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Chart + Recent Activity */}
+          {/* === CHART + RECENT ACTIVITY === */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Chart */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden"
+              className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
             >
-              <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div className="p-6 border-b border-gray-100">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-800">Revenue Trend</h2>
-                    <p className="text-xs sm:text-sm text-gray-500">Live booking amounts</p>
+                    <h2 className="text-xl font-bold text-gray-800">Revenue Trend</h2>
+                    <p className="text-sm text-gray-500">Live booking performance</p>
                   </div>
-                  <select className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500">
+                  <select className="px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500">
                     <option>Last 7 days</option>
                     <option>Last 30 days</option>
                     <option>Last 12 months</option>
                   </select>
                 </div>
               </div>
-              <div className="p-4 sm:p-6">
-                <div className="h-64 sm:h-80">
-                  <FundsChart />
-                </div>
+              <div className="p-6">
+                <div className="h-80"><FundsChart /></div>
               </div>
             </motion.div>
 
@@ -293,21 +259,21 @@ const Dashboard = () => {
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-5 sm:p-6"
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6"
             >
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Activity</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {recentBookings.length > 0 ? (
                   recentBookings.map((b) => {
-                    const isHighValue = b.amount >= 500;
+                    const isHighValue = b.amount >= 50000;
                     return (
-                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition">
-                        <div className={`p-2 rounded-full ${b.status === "confirmed" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>
-                          {b.status === "confirmed" ? <UserCheck size={16} /> : <Clock size={16} />}
+                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition">
+                        <div className={`p-2 rounded-full ${b.status?.toLowerCase() === "confirmed" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>
+                          {b.status?.toLowerCase() === "confirmed" ? <UserCheck size={16} /> : <Clock size={16} />}
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-800">{b.customerName}</p>
-                          <p className="text-xs text-gray-500">Booking #{b.id}</p>
+                          <p className="text-xs text-gray-500">#{b.id}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {isHighValue && (
@@ -315,7 +281,7 @@ const Dashboard = () => {
                               HIGH
                             </span>
                           )}
-                          <p className="text-sm font-semibold text-gray-900">${b.amount}</p>
+                          <p className="text-sm font-bold text-gray-900">₹{b.amount}</p>
                         </div>
                       </div>
                     );
@@ -327,33 +293,33 @@ const Dashboard = () => {
             </motion.div>
           </div>
 
-          {/* Bottom Row */}
+          {/* === BOTTOM ROW === */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Bookings Table */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden"
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
             >
-              <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div className="p-6 border-b border-gray-100">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <h3 className="text-lg font-bold text-gray-800">Recent Bookings</h3>
-                  <div className="flex gap-2 w-full sm:w-auto">
+                  <h3 className="text-xl font-bold text-gray-800">Recent Bookings</h3>
+                  <div className="flex gap-3 w-full sm:w-auto">
                     <div className="relative flex-1 sm:flex-initial">
-                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="Search..."
+                        placeholder="Search bookings..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-3 py-2 w-full text-sm rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500"
+                        className="pl-10 pr-4 py-2.5 w-full text-sm rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500 transition"
                       />
                     </div>
                     <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
-                      className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white"
+                      className="px-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-white"
                     >
                       <option value="all">All</option>
                       <option value="confirmed">Confirmed</option>
@@ -366,44 +332,36 @@ const Dashboard = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-100">
                     {bookingsLoading ? (
                       Array(5).fill(0).map((_, i) => (
-                        <tr key={i}>
-                          <td colSpan={5} className="px-4 py-4">
-                            <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                          </td>
-                        </tr>
+                        <tr key={i}><td colSpan={5} className="px-6 py-4"><div className="h-4 bg-gray-200 rounded animate-pulse" /></td></tr>
                       ))
                     ) : recentBookings.length > 0 ? (
                       recentBookings.map((b) => (
                         <tr key={b.id} className="hover:bg-gray-50 transition">
-                          <td className="px-4 py-3 text-sm text-gray-900">#{b.id}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900">{b.customerName}</td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {format(new Date(b.date), "MMM d, yyyy")}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              b.status === "confirmed" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                          <td className="px-6 py-3 text-sm font-medium text-indigo-600">#{b.id}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900">{b.customerName}</td>
+                          <td className="px-6 py-3 text-sm text-gray-500">{format(new Date(b.date), "MMM d, yyyy")}</td>
+                          <td className="px-6 py-3">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                              b.status?.toLowerCase() === "confirmed" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                             }`}>
                               {b.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">${b.amount}</td>
+                          <td className="px-6 py-3 text-sm font-bold text-gray-900">₹{b.amount}</td>
                         </tr>
                       ))
                     ) : (
-                      <tr>
-                        <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No bookings found</td>
-                      </tr>
+                      <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">No bookings found</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -415,26 +373,26 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-5 sm:p-6"
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6"
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Top Revenue Sources</h3>
-                <FileText size={20} className="text-gray-400" />
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-xl font-bold text-gray-800">Top Revenue Sources</h3>
+                <FileText size={22} className="text-gray-400" />
               </div>
               <div className="space-y-4">
                 {topSources.length > 0 ? (
                   topSources.map((source, i) => (
-                    <div key={i} className="flex items-center justify-between">
+                    <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                          {source.name[0]}
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                          {source.name[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-800">{source.name}</p>
+                          <p className="text-sm font-semibold text-gray-800">{source.name}</p>
                           <p className="text-xs text-gray-500">{source.bookings} bookings</p>
                         </div>
                       </div>
-                      <p className="text-sm font-bold text-gray-900">${source.revenue.toLocaleString()}</p>
+                      <p className="text-sm font-bold text-indigo-600">₹{source.revenue.toLocaleString()}</p>
                     </div>
                   ))
                 ) : (
@@ -446,6 +404,18 @@ const Dashboard = () => {
 
         </div>
       </div>
+
+      {/* === ANIMATIONS === */}
+      <style jsx>{`
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 8s ease infinite;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };
