@@ -1,117 +1,53 @@
-import React, { useEffect, useState, createContext, useContext } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
-} from "react-router-dom";
-
-// Layout
-import Layout from "../layouts/Layout";
-
-// Pages
-import Home from "../pages/Home";
+// src/routes/AppRoutes.jsx
+import { Routes, Route } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
-import Tracker from "../pages/Tracker";
+import AllBookings from "../pages/Bookings/AllBookings";
+import TrackBooking from "../pages/Bookings/TrackBooking";
 import Reports from "../pages/Reports";
 import Settings from "../pages/Settings";
-import Goals from "../pages/Goals";
-import SignIn from "../pages/auth/SignIn";
-import SignUp from "../pages/auth/SignUp";
+import SignIn from "../pages/SignIn";
+import Register from "../pages/Register";
+import NotFound from "../pages/NotFound";
+import AddBooking from "../pages/Bookings/AddBooking";
+import FundsDashboard from "../pages/FundsDashboard";
 
-// ──────────────────────────────────────
-// 1. Auth Context (single source of truth)
-// ──────────────────────────────────────
-const AuthContext = createContext({
-  user: null,
-  login: () => {},
-  logout: () => {},
-  loading: true,
-});
+// Contexts
+import { BookingProvider } from "../context/BookingContext";
+import { FundsProvider } from "../context/FundsContext";
+import { ExpenseProvider } from "../context/ExpenseContext"; // ← NEW
 
-export const useAuth = () => useContext(AuthContext);
-
-// ──────────────────────────────────────
-// 2. Auth Provider (loads once, never re-creates)
-// ──────────────────────────────────────
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const raw = localStorage.getItem("demoUser");
-    if (raw) setUser(JSON.parse(raw));
-    setLoading(false);
-  }, []);
-
-  const login = (u) => {
-    localStorage.setItem("demoUser", JSON.stringify(u));
-    setUser(u);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("demoUser");
-    setUser(null);
-  };
-
+const AppRoutes = () => {
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+    <BookingProvider>
+      <FundsProvider>
+        <ExpenseProvider> {/* ← Wrap everything that uses expenses */}
+          <Routes>
+            {/* Auth */}
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/register" element={<Register />} />
 
-// ──────────────────────────────────────
-// 3. Protected Layout (only renders Layout when logged in)
-// ──────────────────────────────────────
-function ProtectedLayout() {
-  const { user, loading } = useAuth();
+            {/* Dashboard */}
+            <Route path="/" element={<Dashboard />} />
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
+            {/* Bookings */}
+            <Route path="/bookings" element={<AllBookings />} />
+            <Route path="/bookings/track" element={<TrackBooking />} />
+            <Route path="/bookings/add" element={<AddBooking />} />
 
-  return user ? (
-    <Layout>
-      <Outlet />
-    </Layout>
-  ) : (
-    <Navigate to="/auth/signin" replace />
-  );
-}
+            {/* Funds + Expenses */}
+            <Route path="/funds/*" element={<FundsDashboard />} />
 
-// ──────────────────────────────────────
-// 4. Main Router
-// ──────────────────────────────────────
-export default function AppRoutes() {
-  return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Home />} />
-          <Route path="/auth/signin" element={<SignIn />} />
-          <Route path="/auth/signup" element={<SignUp />} />
-
-          {/* Protected – Layout + Outlet */}
-          <Route element={<ProtectedLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/tracker" element={<Tracker />} />
+            {/* Reports & Settings */}
             <Route path="/reports" element={<Reports />} />
-                <Route path="/goals" element={<Goals />} />
             <Route path="/settings" element={<Settings />} />
 
-          </Route>
-
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ExpenseProvider>
+      </FundsProvider>
+    </BookingProvider>
   );
-}
+};
+
+export default AppRoutes;

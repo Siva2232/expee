@@ -1,205 +1,140 @@
-// src/components/layout/Sidebar.jsx
-import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
-  Menu,
-  X,
-  Home,
-  BarChart2,
-  Calendar,
+  LayoutDashboard,
+  Book,
+  Wallet,
+  BarChart3,
   Settings,
   LogOut,
   User,
-  Zap,
-  Target,
-  Trophy,
-  ChevronRight,
+  Loader2,
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
-  const { user, logout } = useAuth();
+const Sidebar = () => {
   const navigate = useNavigate();
-
-  // Realistic user data (from auth context)
-  const displayName = user?.name || "Alex Turner";
-  const avatarInitial = displayName.charAt(0).toUpperCase();
-  const streak = 12;
-  const level = 7;
-  const xpProgress = 68; // %
+  const { user, logout, loading } = useAuth(); // ← get loading flag
 
   const links = [
-    { name: "Dashboard", icon: <Home size={18} />, path: "/dashboard", badge: null },
-    { name: "Focus Tracker", icon: <Zap size={18} />, path: "/tracker", badge: "Live" },
-    { name: "Reports", icon: <BarChart2 size={18} />, path: "/reports", badge: null },
-    { name: "Goals", icon: <Target size={18} />, path: "/goals", badge: "3" },
-    { name: "Settings", icon: <Settings size={18} />, path: "/settings", badge: null },
+    { name: "Dashboard", path: "/", icon: LayoutDashboard },
+    { name: "Bookings", path: "/bookings", icon: Book },
+    { name: "Funds", path: "/funds", icon: Wallet },
+    { name: "Reports", path: "/reports", icon: BarChart3 },
+    { name: "Settings", path: "/settings", icon: Settings },
   ];
 
-  const handleLogout = () => {
-    logout();
-    navigate("/auth/signin");
-  };
+  const handleLogout = () => logout();
+
+  // -------------------------------------------------
+  // 1. Show a tiny spinner while the context is hydrating
+  // -------------------------------------------------
+  if (loading) {
+    return (
+      <aside className="flex h-full w-full flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        </div>
+      </aside>
+    );
+  }
+
+  // -------------------------------------------------
+  // 2. If we *still* have no user → redirect to sign-in
+  // -------------------------------------------------
+  if (!user) {
+    // This should never happen after loading, but guard anyway
+    navigate("/signin", { replace: true });
+    return null;
+  }
 
   return (
-    <aside
-      className={`${
-        isOpen ? "w-64" : "w-20"
-      } bg-white/80 backdrop-blur-xl border-r border-gray-200 h-screen sticky top-0 transition-all duration-300 flex flex-col shadow-lg`}
-    >
-      {/* === HEADER: Logo + Toggle === */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-            T
-          </div>
-          {isOpen && (
-            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-              Tracker
-            </h1>
-          )}
-        </div>
-
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-all hover:scale-110"
-          aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          {isOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-
-      {/* === USER PROFILE CARD === */}
-      <div className="p-4 border-b border-gray-100">
+    <aside className="flex h-full w-full flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+      {/* Logo */}
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-              {avatarInitial}
-            </div>
-            {streak > 7 && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center animate-pulse">
-                <Trophy size={10} className="text-white" />
-              </div>
-            )}
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-lg">
+            CP
           </div>
-
-          {isOpen && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500">Level {level}</span>
-                <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-500"
-                    style={{ width: `${xpProgress}%` }}
-                  />
-                </div>
-                <span className="text-indigo-600 font-medium">{xpProgress}%</span>
-              </div>
-            </div>
-          )}
+          <h1 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent">
+            Control Panel
+          </h1>
         </div>
-
-        {/* Streak Badge */}
-        {isOpen && streak > 0 && (
-          <div className="mt-3 flex items-center gap-2 text-xs font-medium text-orange-600 bg-orange-50 px-3 py-1.5 rounded-full w-fit">
-            <Trophy size={14} />
-            <span>{streak}-day streak</span>
-          </div>
-        )}
       </div>
 
-      {/* === NAVIGATION LINKS === */}
-      <nav className="flex-1 mt-3 px-3 space-y-1">
-        {links.map((link) => (
+      {/* User Profile – DYNAMIC */}
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 p-0.5 shadow-md">
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-white dark:bg-gray-800">
+              <User size={18} className="text-gray-700 dark:text-gray-300" />
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800 dark:text-white">
+              {user.name}
+            </p>
+            <p className="truncate text-xs text-gray-500 dark:text-gray-400 max-w-[150px]">
+              {user.email}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 p-4">
+        {links.map(({ name, path, icon: Icon }) => (
           <NavLink
-            key={link.path}
-            to={link.path}
+            key={name}
+            to={path}
             end
             className={({ isActive }) =>
-              `group relative flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
+              `group relative flex items-center gap-3 overflow-hidden rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200
+              ${
                 isActive
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                  : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-600"
+                  ? "text-white shadow-lg"
+                  : "text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
               }`
             }
           >
-            <div className="flex items-center gap-3">
-              <div className={isOpen ? "" : "mx-auto"}>{link.icon}</div>
-              {isOpen && <span className="text-sm font-medium">{link.name}</span>}
-            </div>
-
-            {/* Badge */}
-            {link.badge && isOpen && (
-              <span
-                className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                  link.badge === "Live"
-                    ? "bg-green-100 text-green-700 animate-pulse"
-                    : "bg-indigo-100 text-indigo-700"
-                }`}
-              >
-                {link.badge}
-              </span>
-            )}
-
-            {/* Tooltip when collapsed */}
-            {!isOpen && (
-              <div className="absolute left-full ml-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-10">
-                {link.name}
-                {link.badge && (
-                  <span className="ml-2 px-1.5 py-0.5 bg-white/20 rounded text-xs">
-                    {link.badge}
-                  </span>
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeSidebarPill"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
                 )}
-                <ChevronRight size={12} className="inline ml-1" />
-              </div>
+                <Icon
+                  size={20}
+                  className={`relative z-10 transition-colors ${
+                    isActive ? "text-white" : "group-hover:text-blue-600"
+                  }`}
+                />
+                <span className="relative z-10">{name}</span>
+                {!isActive && (
+                  <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-blue-900/20" />
+                )}
+              </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* === QUICK STATS === */}
-      {isOpen && (
-        <div className="px-4 py-3 border-t border-gray-100 space-y-3">
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-500">Today</span>
-            <span className="font-semibold text-indigo-600">6h 42m</span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-500">Weekly Goal</span>
-            <span className="font-semibold text-green-600">84%</span>
-          </div>
-        </div>
-      )}
-
-      {/* === LOGOUT === */}
-      <div className="p-3 border-t border-gray-100">
+      {/* Logout */}
+      <div className="border-t border-gray-200 p-4 dark:border-gray-700">
         <button
           onClick={handleLogout}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
-            text-red-600 hover:bg-red-50 hover:shadow-sm`}
+          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
         >
-          <LogOut size={18} />
-          {isOpen && "Logout"}
-          {!isOpen && (
-            <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-              <ChevronRight size={16} />
-            </span>
-          )}
+          <LogOut size={20} className="transition-transform group-hover:scale-110" />
+          <span className="font-medium">Logout</span>
         </button>
-      </div>
-
-      {/* === FOOTER === */}
-      <div className="p-3 text-center">
-        {isOpen ? (
-          <p className="text-xs text-gray-400">
-            © 2025 <span className="font-medium text-indigo-600">Uxinity</span> — v2.1.0
-          </p>
-        ) : (
-          <div className="w-6 h-6 mx-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full opacity-60" />
-        )}
       </div>
     </aside>
   );
-}
+};
+
+export default Sidebar;

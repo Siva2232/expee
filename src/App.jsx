@@ -1,11 +1,18 @@
-// src/App.jsx
-import React from "react";
 import AppRoutes from "./routes";
 
-export default function App() {
+/**
+ * Root App Component
+ * - Renders all routes (Dashboard, Bookings, Funds, etc.)
+ * - Wrapped in contexts and router from main.jsx
+ * - Tailwind global layout styling applied
+ */
+function App() {
   return (
-    <div className="font-inter text-gray-900 bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* All page routing handled here */}
       <AppRoutes />
     </div>
   );
 }
+
+export default App;
