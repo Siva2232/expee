@@ -10,9 +10,9 @@ const DashboardLayout = ({ children }) => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-800 dark:text-gray-100 overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-800 overflow-hidden">
       
-      {/* ===== MOBILE SIDEBAR OVERLAY ===== */}
+      {/* MOBILE SIDEBAR OVERLAY */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -31,16 +31,16 @@ const DashboardLayout = ({ children }) => {
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: "spring", stiffness: 120, damping: 20 }}
-              className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-800 shadow-2xl z-50 lg:hidden flex flex-col overflow-hidden"
+              className="fixed left-0 top-0 h-full w-72 bg-white shadow-2xl z-50 lg:hidden flex flex-col overflow-hidden"
             >
-              <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="p-5 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Control Panel
                 </h2>
                 <button
                   onClick={toggleSidebar}
                   aria-expanded={sidebarOpen}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  className="p-2 rounded-lg hover:bg-gray-100 transition"
                 >
                   <X size={20} />
                 </button>
@@ -53,22 +53,22 @@ const DashboardLayout = ({ children }) => {
         )}
       </AnimatePresence>
 
-      {/* ===== DESKTOP SIDEBAR ===== */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-xl">
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-white border-r border-gray-200 shadow-xl">
         <div className="flex-1 overflow-hidden">
           <Sidebar />
         </div>
       </aside>
 
-      {/* ===== MAIN CONTENT ===== */}
+      {/* MAIN CONTENT */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent to-gray-50/50 dark:to-gray-900/50 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent to-gray-50/50 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
 
-      {/* ===== MOBILE TOGGLE BUTTON ===== */}
+      {/* MOBILE TOGGLE BUTTON */}
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
