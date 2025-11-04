@@ -10,7 +10,7 @@ import {
   User,
   Loader2,
 } from "lucide-react";
-import Logo from "../assets/logo.png";
+import Logo from "../assets/Logo.png";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 
