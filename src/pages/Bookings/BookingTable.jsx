@@ -14,7 +14,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
 
-  // ── Filter by search + category ──
+  // Filter by search + category
   const filteredBookings = useMemo(() => {
     let result = bookings;
 
@@ -39,7 +39,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
-      {/* ── Filters ── */}
+      {/* Filters */}
       <div className="p-4 bg-gray-50 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -67,7 +67,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove }) => {
         </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* Table */}
       <table className="min-w-full">
         <thead className="bg-gray-100 text-gray-700 text-xs uppercase tracking-wider">
           <tr>

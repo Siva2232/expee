@@ -29,7 +29,7 @@ const AllBookings = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+        <div className="bg-white p-6 rounded-2xl shadow-sm">
           <BookingTable
             bookings={bookings}
             onUpdateStatus={updateBookingStatus}

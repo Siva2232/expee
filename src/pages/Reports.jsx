@@ -24,7 +24,7 @@ import {
   FileText,
   Filter,
   BarChart3,
-  PieChart,          // ← we use the normal PieChart icon
+  PieChart,
   Activity,
   Target,
   ArrowUpRight,
@@ -45,7 +45,7 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart as RechartsPie,   // keep the chart component separate
+  PieChart as RechartsPie,
   Pie,
   Cell,
   XAxis,
@@ -65,9 +65,7 @@ const Reports = () => {
   const [dateRange, setDateRange] = useState("thisMonth");
   const [reportType, setReportType] = useState("overview");
 
-  /* --------------------------------------------------------------
-     Date‑range logic
-  -------------------------------------------------------------- */
+  /* Date-range logic */
   const { start, end } = useMemo(() => {
     const now = new Date();
     let s, e;
@@ -92,16 +90,14 @@ const Reports = () => {
         s = new Date(now.getFullYear() - 1, 0, 1);
         e = new Date(now.getFullYear() - 1, 11, 31);
         break;
-      default: // thisMonth
+      default:
         s = startOfMonth(now);
         e = endOfMonth(now);
     }
     return { start: s, end: e };
   }, [dateRange]);
 
-  /* --------------------------------------------------------------
-     Filter data by selected period
-  -------------------------------------------------------------- */
+  /* Filter data by selected period */
   const filteredBookings = useMemo(
     () =>
       bookings.filter(b => {
@@ -120,9 +116,7 @@ const Reports = () => {
     [expenses, start, end]
   );
 
-  /* --------------------------------------------------------------
-     Core calculations
-  -------------------------------------------------------------- */
+  /* Core calculations */
   const totalRevenue = filteredBookings.reduce(
     (sum, b) => sum + (Number(b.amount) || 0),
     0
@@ -140,9 +134,7 @@ const Reports = () => {
     ? Math.round(totalRevenue / bookingCount)
     : 0;
 
-  /* --------------------------------------------------------------
-     Growth vs previous period
-  -------------------------------------------------------------- */
+  /* Growth vs previous period */
   const prevPeriod = useMemo(() => {
     const diff = end.getTime() - start.getTime();
     const prevStart = new Date(start.getTime() - diff - 1);
@@ -161,9 +153,7 @@ const Reports = () => {
     ? ((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1)
     : 0;
 
-  /* --------------------------------------------------------------
-     12‑month trend
-  -------------------------------------------------------------- */
+  /* 12-month trend */
   const monthlyTrend = useMemo(() => {
     const data = [];
     for (let i = 11; i >= 0; i--) {
@@ -192,9 +182,7 @@ const Reports = () => {
     return data;
   }, [bookings, expenses]);
 
-  /* --------------------------------------------------------------
-     Top customers
-  -------------------------------------------------------------- */
+  /* Top customers */
   const topCustomers = useMemo(() => {
     const map = {};
     filteredBookings.forEach(b => {
@@ -207,9 +195,7 @@ const Reports = () => {
       .slice(0, 6);
   }, [filteredBookings]);
 
-  /* --------------------------------------------------------------
-     Expense by category
-  -------------------------------------------------------------- */
+  /* Expense by category */
   const expenseByCategory = useMemo(() => {
     const map = {
       Fuel: 0,
@@ -238,9 +224,7 @@ const Reports = () => {
     "#6366f1",
   ];
 
-  /* --------------------------------------------------------------
-     Export CSV
-  -------------------------------------------------------------- */
+  /* Export CSV */
   const exportCSV = () => {
     const headers = "Type,Date,Description,Amount,Category/Customer\n";
     const rows = [
@@ -252,9 +236,6 @@ const Reports = () => {
     saveAs(blob, `report-${format(start, "yyyy-MM-dd")}-to-${format(end, "yyyy-MM-dd")}.csv`);
   };
 
-  /* --------------------------------------------------------------
-     Render
-  -------------------------------------------------------------- */
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 sm:p-6 lg:p-8">
@@ -267,7 +248,7 @@ const Reports = () => {
                 <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   Advanced Reports & Analytics
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-600 mt-1">
                   {format(start, "MMM d")} – {format(end, "MMM d, yyyy")} • {bookingCount} bookings • {filteredExpenses.length} expenses
                 </p>
               </div>
@@ -281,7 +262,7 @@ const Reports = () => {
 
           {/* Filters */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-3">
-            <select value={dateRange} onChange={e => setDateRange(e.target.value)} className="px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-sm">
+            <select value={dateRange} onChange={e => setDateRange(e.target.value)} className="px-4 py-2 bg-white rounded-xl border border-gray-200 text-sm">
               <option value="thisMonth">This Month</option>
               <option value="lastMonth">Last Month</option>
               <option value="last3Months">Last 3 Months</option>
@@ -289,7 +270,7 @@ const Reports = () => {
               <option value="thisYear">This Year</option>
               <option value="lastYear">Last Year</option>
             </select>
-            <select value={reportType} onChange={e => setReportType(e.target.value)} className="px-4 py-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 text-sm">
+            <select value={reportType} onChange={e => setReportType(e.target.value)} className="px-4 py-2 bg-white rounded-xl border border-gray-200 text-sm">
               <option value="overview">Overview</option>
               <option value="revenue">Revenue</option>
               <option value="expenses">Expenses</option>
@@ -335,7 +316,7 @@ const Reports = () => {
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Revenue vs Expense Trend */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Activity size={20} /> Revenue & Profit Trend (12 Months)</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
@@ -354,7 +335,7 @@ const Reports = () => {
             </motion.div>
 
             {/* Expense Breakdown */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><PieChart size={20} /> Expense by Category</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
@@ -381,22 +362,22 @@ const Reports = () => {
 
           {/* Top Customers + Recent Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Users size={20} /> Top 6 Customers</h3>
               <div className="space-y-3">
                 {topCustomers.map((c, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl">
+                  <div key={i} className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                         {i + 1}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-800 dark:text-white">{c.name}</p>
+                        <p className="font-medium text-gray-800">{c.name}</p>
                         <p className="text-xs text-gray-500">₹{c.amount.toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                      <p className="text-sm font-semibold text-indigo-600">
                         {(c.amount / totalRevenue * 100).toFixed(1)}%
                       </p>
                     </div>
@@ -405,14 +386,14 @@ const Reports = () => {
               </div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Clock size={20} /> Recent Activity</h3>
               <div className="space-y-3 text-sm">
                 {[...filteredBookings.map(b => ({ ...b, amount: Number(b.amount) })), ...filteredExpenses.map(e => ({ ...e, amount: -e.amount }))].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5).map((item, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {item.amount > 0 ? <CheckCircle size={16} className="text-emerald-500" /> : <AlertCircle size={16} className="text-rose-500" />}
-                      <span className="text-gray-700 dark:text-gray-300">{item.customerName || item.description}</span>
+                      <span className="text-gray-700">{item.customerName || item.description}</span>
                     </div>
                     <span className={item.amount > 0 ? "text-emerald-600" : "text-rose-600"}>₹{Math.abs(item.amount).toFixed(2)}</span>
                   </div>

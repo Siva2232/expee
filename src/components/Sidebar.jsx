@@ -14,7 +14,7 @@ import { useAuth } from "../context/AuthContext";
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const { user, logout, loading } = useAuth(); // ← get loading flag
+  const { user, logout, loading } = useAuth();
 
   const links = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -26,12 +26,10 @@ const Sidebar = () => {
 
   const handleLogout = () => logout();
 
-  // -------------------------------------------------
-  // 1. Show a tiny spinner while the context is hydrating
-  // -------------------------------------------------
+  // Show spinner while loading
   if (loading) {
     return (
-      <aside className="flex h-full w-full flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+      <aside className="flex h-full w-full flex-col bg-white border-r border-gray-200">
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
         </div>
@@ -39,19 +37,16 @@ const Sidebar = () => {
     );
   }
 
-  // -------------------------------------------------
-  // 2. If we *still* have no user → redirect to sign-in
-  // -------------------------------------------------
+  // Redirect if no user (after loading)
   if (!user) {
-    // This should never happen after loading, but guard anyway
     navigate("/signin", { replace: true });
     return null;
   }
 
   return (
-    <aside className="flex h-full w-full flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+    <aside className="flex h-full w-full flex-col bg-white">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-lg font-bold text-white shadow-lg">
             CP
@@ -62,19 +57,17 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* User Profile – DYNAMIC */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      {/* User Profile */}
+      <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-500 p-0.5 shadow-md">
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-white dark:bg-gray-800">
-              <User size={18} className="text-gray-700 dark:text-gray-300" />
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
+              <User size={18} className="text-gray-700" />
             </div>
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-800 dark:text-white">
-              {user.name}
-            </p>
-            <p className="truncate text-xs text-gray-500 dark:text-gray-400 max-w-[150px]">
+            <p className="text-sm font-semibold text-gray-800">{user.name}</p>
+            <p className="truncate text-xs text-gray-500 max-w-[150px]">
               {user.email}
             </p>
           </div>
@@ -93,7 +86,7 @@ const Sidebar = () => {
               ${
                 isActive
                   ? "text-white shadow-lg"
-                  : "text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
+                  : "text-gray-700 hover:text-blue-600"
               }`
             }
           >
@@ -115,7 +108,7 @@ const Sidebar = () => {
                 />
                 <span className="relative z-10">{name}</span>
                 {!isActive && (
-                  <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 transition-opacity group-hover:opacity-100 dark:bg-blue-900/20" />
+                  <div className="absolute inset-0 rounded-xl bg-blue-50 opacity-0 transition-opacity group-hover:opacity-100" />
                 )}
               </>
             )}
@@ -124,10 +117,10 @@ const Sidebar = () => {
       </nav>
 
       {/* Logout */}
-      <div className="border-t border-gray-200 p-4 dark:border-gray-700">
+      <div className="border-t border-gray-200 p-4">
         <button
           onClick={handleLogout}
-          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-900/20"
+          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-red-600 transition hover:bg-red-50"
         >
           <LogOut size={20} className="transition-transform group-hover:scale-110" />
           <span className="font-medium">Logout</span>

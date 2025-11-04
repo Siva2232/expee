@@ -35,7 +35,7 @@ export default function AddBooking() {
     date: format(new Date(), "yyyy-MM-dd"),
     amount: "",
     status: "pending",
-    category: "flight", // default
+    category: "flight",
   });
 
   const [errors, setErrors] = useState({});
@@ -80,7 +80,7 @@ export default function AddBooking() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
         <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
 
           {/* Header */}
@@ -91,7 +91,7 @@ export default function AddBooking() {
           >
             <button
               onClick={() => navigate("/bookings")}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 transition"
+              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition"
             >
               <ArrowLeft size={20} />
               <span className="hidden sm:inline">Back to Bookings</span>
@@ -101,12 +101,12 @@ export default function AddBooking() {
             </h1>
           </motion.div>
 
-          {/* Success */}
+          {/* Success Message */}
           {success && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-3 text-emerald-700 dark:text-emerald-400"
+              className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-700"
             >
               <CheckCircle size={24} />
               <div>
@@ -121,13 +121,13 @@ export default function AddBooking() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8"
+            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
 
               {/* Category */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
                   <Plane size={18} />
                   Travel Type
                 </label>
@@ -137,8 +137,8 @@ export default function AddBooking() {
                       key={cat.value}
                       className={`flex flex-col items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
                         form.category === cat.value
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                          : "border-gray-300 dark:border-gray-600 hover:border-gray-400"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-300 hover:border-gray-400"
                       }`}
                     >
                       <input
@@ -158,7 +158,7 @@ export default function AddBooking() {
 
               {/* Customer Name */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <User size={18} />
                   Customer Name
                 </label>
@@ -167,8 +167,8 @@ export default function AddBooking() {
                   value={form.customerName}
                   onChange={(e) => setForm({ ...form, customerName: e.target.value })}
                   className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.customerName ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
+                    errors.customerName ? "border-red-500" : "border-gray-300"
+                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
                   placeholder="John Doe"
                   disabled={submitting}
                 />
@@ -177,7 +177,7 @@ export default function AddBooking() {
 
               {/* Email */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <Mail size={18} />
                   Email
                 </label>
@@ -186,8 +186,8 @@ export default function AddBooking() {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
+                    errors.email ? "border-red-500" : "border-gray-300"
+                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
                   placeholder="john@example.com"
                   disabled={submitting}
                 />
@@ -196,7 +196,7 @@ export default function AddBooking() {
 
               {/* Date */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <Calendar size={18} />
                   Travel Date
                 </label>
@@ -205,8 +205,8 @@ export default function AddBooking() {
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
+                    errors.date ? "border-red-500" : "border-gray-300"
+                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
                   disabled={submitting}
                 />
                 {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
@@ -214,7 +214,7 @@ export default function AddBooking() {
 
               {/* Amount */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <DollarSign size={18} />
                   Amount
                 </label>
@@ -225,8 +225,8 @@ export default function AddBooking() {
                   value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: e.target.value })}
                   className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.amount ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                  } bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
+                    errors.amount ? "border-red-500" : "border-gray-300"
+                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
                   placeholder="250.00"
                   disabled={submitting}
                 />
@@ -235,14 +235,14 @@ export default function AddBooking() {
 
               {/* Status */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <Clock size={18} />
                   Status
                 </label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base"
                   disabled={submitting}
                 >
                   <option value="pending">Pending</option>
@@ -255,7 +255,7 @@ export default function AddBooking() {
                 <button
                   type="button"
                   onClick={() => navigate("/bookings")}
-                  className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition font-medium"
+                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition font-medium"
                   disabled={submitting}
                 >
                   Cancel

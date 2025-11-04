@@ -31,11 +31,11 @@ const FundsDashboard = () => {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
 
-  // ── REVENUE BY PERIOD (FIXED: use `let`) ──
+  // Revenue by Period
   const revenueByPeriod = useMemo(() => {
     const now = new Date();
     const dailyStart = startOfDay(now);
-    const weeklyStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+    const weeklyStart = startOfWeek(now, { weekStartsOn: 1 });
     const monthlyStart = startOfMonth(now);
     const yearlyStart = startOfYear(now);
 
@@ -54,7 +54,7 @@ const FundsDashboard = () => {
     return { daily, weekly, monthly, yearly };
   }, [bookings]);
 
-  // ── PROFIT = REVENUE - EXPENSES ──
+  // Profit = Revenue - Expenses
   const profit = useMemo(() => ({
     daily: revenueByPeriod.daily - expenseTotal,
     weekly: revenueByPeriod.weekly - expenseTotal,
@@ -62,7 +62,7 @@ const FundsDashboard = () => {
     yearly: revenueByPeriod.yearly - expenseTotal,
   }), [revenueByPeriod, expenseTotal]);
 
-  // ── BOOKING STATS ──
+  // Booking Stats
   const bookingStats = useMemo(() => {
     const total = revenueByPeriod.yearly;
     const avg = bookings.length ? Math.round(total / bookings.length) : 0;
@@ -70,7 +70,7 @@ const FundsDashboard = () => {
     return { total, avg, highest, count: bookings.length };
   }, [revenueByPeriod, bookings]);
 
-  // ── EXPENSE CATEGORIES ──
+  // Expense Categories
   const categoryTotals = useMemo(() => {
     const map = {};
     CATEGORIES.forEach(c => map[c] = 0);
@@ -137,7 +137,7 @@ const FundsDashboard = () => {
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Funds & Profit Center
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-sm sm:text-base text-gray-600 mt-1">
                   {bookingStats.count} bookings • ₹{bookingStats.total.toLocaleString()} revenue • ₹{expenseTotal.toLocaleString()} spent
                 </p>
               </div>
@@ -151,7 +151,7 @@ const FundsDashboard = () => {
           </motion.header>
 
           {/* Tab Bar */}
-          <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -160,8 +160,8 @@ const FundsDashboard = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all ${
                     activeTab === tab.id
-                      ? "bg-white dark:bg-gray-800 text-blue-600 border-t-2 border-x border-gray-200 dark:border-gray-700"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      ? "bg-white text-blue-600 border-t-2 border-x border-gray-200"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   <Icon size={16} />
@@ -187,10 +187,10 @@ const FundsDashboard = () => {
   );
 };
 
-// ── DAILY FUNDS ──
+// Daily Funds
 const DailyFunds = ({ revenue, profit, bookingStats }) => (
   <div className="space-y-8">
-    <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Daily Overview</h2>
+    <h2 className="text-xl font-semibold text-gray-800">Daily Overview</h2>
     <div className="grid md:grid-cols-4 gap-6">
       <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-5 rounded-2xl text-white shadow-lg">
         <p className="text-sm opacity-90">Revenue</p>
@@ -213,11 +213,11 @@ const DailyFunds = ({ revenue, profit, bookingStats }) => (
   </div>
 );
 
-// Reuse for Weekly/Monthly/Yearly
+// Weekly/Monthly/Yearly Funds
 const WeeklyFunds = ({ revenue, profit }) => (
   <div className="space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Weekly Funds</h2>
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+    <h2 className="text-xl font-semibold text-gray-800">Weekly Funds</h2>
+    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
       <div className="h-64 sm:h-80"><FundsChart period="weekly" /></div>
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div><strong>Revenue:</strong> ₹{revenue.toLocaleString()}</div>
@@ -229,8 +229,8 @@ const WeeklyFunds = ({ revenue, profit }) => (
 
 const MonthlyFunds = ({ revenue, profit }) => (
   <div className="space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Monthly Funds</h2>
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+    <h2 className="text-xl font-semibold text-gray-800">Monthly Funds</h2>
+    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
       <div className="h-64 sm:h-80"><FundsChart period="monthly" /></div>
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div><strong>Revenue:</strong> ₹{revenue.toLocaleString()}</div>
@@ -242,8 +242,8 @@ const MonthlyFunds = ({ revenue, profit }) => (
 
 const YearlyFunds = ({ revenue, profit }) => (
   <div className="space-y-6">
-    <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Yearly Funds</h2>
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+    <h2 className="text-xl font-semibold text-gray-800">Yearly Funds</h2>
+    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
       <div className="h-64 sm:h-80"><FundsChart period="yearly" /></div>
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div><strong>Revenue:</strong> ₹{revenue.toLocaleString()}</div>
@@ -253,21 +253,21 @@ const YearlyFunds = ({ revenue, profit }) => (
   </div>
 );
 
-// ── EXPENSE TRACKER (unchanged) ──
+// Expense Tracker
 const ExpenseTracker = ({ expenses, removeExpense, handleAddExpense, desc, setDesc, amount, setAmount, category, setCategory, expenseTotal, categoryTotals, exportCSV }) => (
   <div className="space-y-8">
     <div className="flex justify-between items-center">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Expense Tracker</h2>
-      <div className="text-lg font-bold text-red-600 dark:text-red-400">
+      <h2 className="text-xl font-semibold text-gray-800">Expense Tracker</h2>
+      <div className="text-lg font-bold text-red-600">
         Total: ₹{expenseTotal.toLocaleString()}
       </div>
     </div>
 
-    <form onSubmit={handleAddExpense} className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+    <form onSubmit={handleAddExpense} className="bg-white p-5 rounded-2xl shadow-lg border border-gray-200">
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <input type="text" placeholder="Description" value={desc} onChange={e => setDesc(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700" />
-        <input type="number" min="0.01" step="0.01" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700" />
-        <select value={category} onChange={e => setCategory(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+        <input type="text" placeholder="Description" value={desc} onChange={e => setDesc(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white" />
+        <input type="number" min="0.01" step="0.01" placeholder="Amount" value={amount} onChange={e => setAmount(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white" />
+        <select value={category} onChange={e => setCategory(e.target.value)} className="px-4 py-2 rounded-lg border border-gray-300 bg-white">
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <button type="submit" className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -276,7 +276,7 @@ const ExpenseTracker = ({ expenses, removeExpense, handleAddExpense, desc, setDe
       </div>
     </form>
 
-    <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="bg-white p-5 rounded-2xl shadow-lg border border-gray-200">
       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
         <Tag size={18} /> Top Expense Categories
       </h3>
@@ -290,32 +290,32 @@ const ExpenseTracker = ({ expenses, removeExpense, handleAddExpense, desc, setDe
       </div>
     </div>
 
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       <div className="max-h-96 overflow-y-auto">
         {expenses.length === 0 ? (
           <p className="p-8 text-center text-gray-500">No expenses recorded</p>
         ) : (
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Description</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Category</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Amount</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200">
               {expenses.map(e => (
-                <tr key={e.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{format(new Date(e.date), "MMM d")}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-800 dark:text-white">{e.description}</td>
+                <tr key={e.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm text-gray-600">{format(new Date(e.date), "MMM d")}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-800">{e.description}</td>
                   <td className="px-4 py-3 text-sm">
-                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
                       {e.category || "Other"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">-₹{e.amount.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-red-600">-₹{e.amount.toFixed(2)}</td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => removeExpense(e.id)} className="text-red-600 hover:text-red-800">
                       <Trash2 size={16} />

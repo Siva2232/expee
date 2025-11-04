@@ -23,7 +23,7 @@ import {
 const Dashboard = () => {
   const { bookings = [], isLoading: bookingsLoading } = useBooking();
   const { totals = {}, topSources = [] } = useFunds();
-  const { expenses = [] } = useExpense(); // Full list
+  const { expenses = [] } = useExpense();
   const { user } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,7 +92,9 @@ const Dashboard = () => {
     bookings: calcTrend(currentStats.count, previousStats.count),
     revenue: calcTrend(currentStats.total, previousStats.total),
     avgBooking: calcTrend(currentStats.avg, previousStats.avg),
-    highest: currentStats.highest > previousStats.highest ? { value: "New", change: 100, isPositive: true } : { value: "–", change: 0, isPositive: false },
+    highest: currentStats.highest > previousStats.highest
+      ? { value: "New", change: 100, isPositive: true }
+      : { value: "–", change: 0, isPositive: false },
     expenses: calcTrend(currentExpenseTotal, prevExpenseTotal),
     profit: calcTrend(
       currentStats.total - currentExpenseTotal,
@@ -163,7 +165,7 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-10">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
 
           {/* Header */}
@@ -173,15 +175,15 @@ const Dashboard = () => {
             className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
           >
             <div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <h1 className=" Divine text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Welcome back, {user?.name?.split(" ")[0] || "Admin"}
               </h1>
-              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
                 Live booking & financial monitoring
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 <span>Live • {format(new Date(), "h:mm a")}</span>
               </div>
@@ -203,7 +205,7 @@ const Dashboard = () => {
                 whileHover={{ y: -6, scale: 1.02 }}
                 className="group relative"
               >
-                <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-5 sm:p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all duration-300">
+                <div className="relative overflow-hidden rounded-2xl bg-white p-5 sm:p-6 shadow-lg border border-gray-200 hover:shadow-2xl transition-all duration-300">
                   <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
                   
                   <div className="flex justify-between items-start mb-3">
@@ -216,28 +218,28 @@ const Dashboard = () => {
                       ) : stat.trend.value === "–" ? (
                         <span className="text-gray-500">–</span>
                       ) : stat.trend.isPositive ? (
-                        <ArrowUpRight size={14} className="text-emerald-600 dark:text-emerald-400" />
+                        <ArrowUpRight size={14} className="text-emerald-600" />
                       ) : (
-                        <ArrowDownRight size={14} className="text-red-600 dark:text-red-400" />
+                        <ArrowDownRight size={14} className="text-red-600" />
                       )}
                       <span className={
-                        stat.trend.value === "New" ? "text-amber-600 dark:text-amber-400" :
+                        stat.trend.value === "New" ? "text-amber-600" :
                         stat.trend.value === "–" ? "text-gray-500" :
-                        stat.trend.isPositive ? "text-emerald-600 dark:text-emerald-400" :
-                        "text-red-600 dark:text-red-400"
+                        stat.trend.isPositive ? "text-emerald-600" :
+                        "text-red-600"
                       }>
                         {stat.trend.value}
                       </span>
                     </div>
                   </div>
 
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">{stat.title}</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium">{stat.title}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
 
                   {/* Progress Bar */}
                   {stat.trend.change > 0 && (
                     <div className="mt-3">
-                      <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${Math.min(stat.trend.change, 100)}%` }}
@@ -263,15 +265,15 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden"
             >
-              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Revenue Trend</h2>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Live booking amounts</p>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-800">Revenue Trend</h2>
+                    <p className="text-xs sm:text-sm text-gray-500">Live booking amounts</p>
                   </div>
-                  <select className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500">
+                  <select className="px-3 py-2 text-xs sm:text-sm rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500">
                     <option>Last 7 days</option>
                     <option>Last 30 days</option>
                     <option>Last 12 months</option>
@@ -290,21 +292,21 @@ const Dashboard = () => {
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-5 sm:p-6"
+              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-5 sm:p-6"
             >
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Recent Activity</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Activity</h3>
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {recentBookings.length > 0 ? (
                   recentBookings.map((b) => {
                     const isHighValue = b.amount >= 500;
                     return (
-                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition">
                         <div className={`p-2 rounded-full ${b.status === "confirmed" ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"}`}>
                           {b.status === "confirmed" ? <UserCheck size={16} /> : <Clock size={16} />}
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-800 dark:text-white">{b.customerName}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Booking #{b.id}</p>
+                          <p className="text-sm font-medium text-gray-800">{b.customerName}</p>
+                          <p className="text-xs text-gray-500">Booking #{b.id}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {isHighValue && (
@@ -312,7 +314,7 @@ const Dashboard = () => {
                               HIGH
                             </span>
                           )}
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">${b.amount}</p>
+                          <p className="text-sm font-semibold text-gray-900">${b.amount}</p>
                         </div>
                       </div>
                     );
@@ -331,11 +333,11 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden"
             >
-              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">Recent Bookings</h3>
+                  <h3 className="text-lg font-bold text-gray-800">Recent Bookings</h3>
                   <div className="flex gap-2 w-full sm:w-auto">
                     <div className="relative flex-1 sm:flex-initial">
                       <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -344,13 +346,13 @@ const Dashboard = () => {
                         placeholder="Search..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-3 py-2 w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
+                        className="pl-10 pr-3 py-2 w-full text-sm rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
-                      className="px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      className="px-3 py-2 text-sm rounded-lg border border-gray-300 bg-white"
                     >
                       <option value="all">All</option>
                       <option value="confirmed">Confirmed</option>
@@ -361,30 +363,30 @@ const Dashboard = () => {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-200">
                     {bookingsLoading ? (
                       Array(5).fill(0).map((_, i) => (
                         <tr key={i}>
                           <td colSpan={5} className="px-4 py-4">
-                            <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded animate-pulse" />
+                            <div className="h-4 bg-gray-200 rounded animate-pulse" />
                           </td>
                         </tr>
                       ))
                     ) : recentBookings.length > 0 ? (
                       recentBookings.map((b) => (
-                        <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">#{b.id}</td>
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{b.customerName}</td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                        <tr key={b.id} className="hover:bg-gray-50 transition">
+                          <td className="px-4 py-3 text-sm text-gray-900">#{b.id}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{b.customerName}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
                             {format(new Date(b.date), "MMM d, yyyy")}
                           </td>
                           <td className="px-4 py-3">
@@ -394,7 +396,7 @@ const Dashboard = () => {
                               {b.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">${b.amount}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">${b.amount}</td>
                         </tr>
                       ))
                     ) : (
@@ -412,10 +414,10 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-5 sm:p-6"
+              className="bg-white rounded-2xl shadow-xl border border-gray-200 p-5 sm:p-6"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Top Revenue Sources</h3>
+                <h3 className="text-lg font-bold text-gray-800">Top Revenue Sources</h3>
                 <FileText size={20} className="text-gray-400" />
               </div>
               <div className="space-y-4">
@@ -427,11 +429,11 @@ const Dashboard = () => {
                           {source.name[0]}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-800 dark:text-white">{source.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{source.bookings} bookings</p>
+                          <p className="text-sm font-medium text-gray-800">{source.name}</p>
+                          <p className="text-xs text-gray-500">{source.bookings} bookings</p>
                         </div>
                       </div>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">${source.revenue.toLocaleString()}</p>
+                      <p className="text-sm font-bold text-gray-900">${source.revenue.toLocaleString()}</p>
                     </div>
                   ))
                 ) : (
