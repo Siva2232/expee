@@ -223,6 +223,11 @@ const Reports = () => {
     "#ef4444",
     "#6366f1",
   ];
+    const getOuterRadius = () => {
+    if (window.innerWidth < 480) return 60; // mobile
+    if (window.innerWidth < 768) return 80; // tablet
+    return 100; // desktop
+  };
 
   /* Export CSV */
   const exportCSV = () => {
@@ -335,29 +340,68 @@ const Reports = () => {
             </motion.div>
 
             {/* Expense Breakdown */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><PieChart size={20} /> Expense by Category</h3>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPie>
-                    <Pie
-                      data={expenseByCategory}
-                      cx="50%" cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={90}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {expenseByCategory.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </RechartsPie>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
+           <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className="bg-white w-full max-w-full p-4 sm:p-6 rounded-2xl shadow-xl border border-gray-200"
+    >
+      {/* Header */}
+      <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-gray-800">
+        <PieChart size={20} className="text-indigo-600" />
+        Expense by Category
+      </h3>
+
+      {/* Chart Section */}
+      <div className="relative w-full h-[220px] sm:h-[260px] md:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsPie>
+            <Pie
+              data={expenseByCategory}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              dataKey="value"
+              fill="#8884d8"
+              // Reduced outer radius for smaller circle
+              outerRadius="60%"
+              // Smaller labels for mobile
+              label={({ name, percent }) =>
+                window.innerWidth < 640
+                  ? `${(percent * 100).toFixed(0)}%`
+                  : `${name} ${(percent * 100).toFixed(0)}%`
+              }
+            >
+              {expenseByCategory.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{
+                borderRadius: "8px",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+              }}
+            />
+          </RechartsPie>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Optional Legend for visibility */}
+      <div className="flex flex-wrap justify-center gap-2 mt-4 text-xs sm:text-sm text-gray-600">
+        {expenseByCategory.map((item, index) => (
+          <div key={index} className="flex items-center gap-1">
+            <span
+              className="inline-block w-3 h-3 rounded-full"
+              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+            ></span>
+            {item.name}
+          </div>
+        ))}
+      </div>
+    </motion.div>
           </div>
 
           {/* Top Customers + Recent Activity */}
