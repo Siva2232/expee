@@ -10,7 +10,9 @@ import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
 import AddBooking from "../pages/Bookings/AddBooking";
 import FundsDashboard from "../pages/FundsDashboard";
-
+import AddRevenue from "../pages/AddRevenue";
+import LogExpense from "../pages/LogExpense";
+import ViewExpense from "../pages/ViewExpense";
 // Contexts
 import { BookingProvider } from "../context/BookingContext";
 import { FundsProvider } from "../context/FundsContext";
@@ -36,6 +38,9 @@ const AppRoutes = () => {
 
             {/* Funds + Expenses */}
             <Route path="/funds/*" element={<FundsDashboard />} />
+            <Route path="/add-revenue/*" element={<AddRevenue />} /> {/* ← NEW */}
+            <Route path="/log-expense/*" element={<LogExpense />} /> {/* ← NEW */}
+           <Route path="/view/:id" element={<ViewExpense />} />
 
             {/* Reports & Settings */}
             <Route path="/reports" element={<Reports />} />

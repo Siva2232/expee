@@ -5,11 +5,13 @@ import FundsChart from "../components/FundsChart";
 import { useBooking } from "../context/BookingContext";
 import { useExpense } from "../context/ExpenseContext";
 import {
-  BarChart3, CalendarDays, CalendarRange, CalendarCheck, Receipt,
-  Download, Trash2, Plus, Tag, TrendingUp, DollarSign
+  BarChart3, CalendarDays, CalendarRange, CalendarCheck, Receipt, TrendingUp, TrendingDown,
+  DollarSign, AlertTriangle, Target, PieChart, Filter, Search, Clock, Repeat, Zap, Sun, Moon,
+  Activity, Goal, LineChart, Grid, Layers, Edit3, Upload, FileText, Users, Award,
+  Download, Trash2, Plus, Tag, ChevronDown, ChevronUp, Clock as ClockIcon, MapPin
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from "date-fns";
+import { format, startOfDay, startOfWeek, startOfMonth, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfYear, addDays, subDays, subWeeks, subMonths, subYears, isToday, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachHourOfInterval, parseISO } from "date-fns";
 import { saveAs } from "file-saver";
 
 const tabs = [
@@ -21,56 +23,165 @@ const tabs = [
 ];
 
 const CATEGORIES = ["Fuel", "Salary", "Rent", "Marketing", "Maintenance", "Other"];
+const TAGS = ["Urgent", "Recurring", "One-time", "Tax-deductible"];
 
 const FundsDashboard = () => {
   const [activeTab, setActiveTab] = useState("daily");
   const { bookings = [] } = useBooking();
-  const { expenses = [], addExpense, removeExpense, total: expenseTotal } = useExpense();
+  const { expenses = [], addExpense, removeExpense, editExpense, total: expenseTotal } = useExpense();
 
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [selectedTags, setSelectedTags] = useState([]);
 
-  // Revenue by Period
+  // Enhanced Revenue by Period with Comparisons and Forecasts
   const revenueByPeriod = useMemo(() => {
     const now = new Date();
     const dailyStart = startOfDay(now);
+    const dailyEnd = endOfDay(now);
     const weeklyStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weeklyEnd = endOfWeek(now, { weekStartsOn: 1 });
     const monthlyStart = startOfMonth(now);
+    const monthlyEnd = endOfMonth(now);
     const yearlyStart = startOfYear(now);
+    const yearlyEnd = endOfYear(now);
 
-    let daily = 0, weekly = 0, monthly = 0, yearly = 0;
+    // Previous periods
+    const prevDailyStart = startOfDay(subDays(now, 1));
+    const prevDailyEnd = endOfDay(subDays(now, 1));
+    const prevWeeklyStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const prevWeeklyEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const prevMonthlyStart = startOfMonth(subMonths(now, 1));
+    const prevMonthlyEnd = endOfMonth(subMonths(now, 1));
+    const prevYearlyStart = startOfYear(subYears(now, 1));
+    const prevYearlyEnd = endOfYear(subYears(now, 1));
+
+    let daily = 0, prevDaily = 0, weekly = 0, prevWeekly = 0, monthly = 0, prevMonthly = 0, yearly = 0, prevYearly = 0;
 
     bookings.forEach(b => {
       const date = new Date(b.date);
       const amt = Number(b.amount) || 0;
 
-      if (date >= yearlyStart) yearly += amt;
-      if (date >= monthlyStart) monthly += amt;
-      if (date >= weeklyStart) weekly += amt;
-      if (date >= dailyStart) daily += amt;
+      if (date >= dailyStart && date <= dailyEnd) daily += amt;
+      if (date >= weeklyStart && date <= weeklyEnd) weekly += amt;
+      if (date >= monthlyStart && date <= monthlyEnd) monthly += amt;
+      if (date >= yearlyStart && date <= yearlyEnd) yearly += amt;
+
+      if (date >= prevDailyStart && date <= prevDailyEnd) prevDaily += amt;
+      if (date >= prevWeeklyStart && date <= prevWeeklyEnd) prevWeekly += amt;
+      if (date >= prevMonthlyStart && date <= prevMonthlyEnd) prevMonthly += amt;
+      if (date >= prevYearlyStart && date <= prevYearlyEnd) prevYearly += amt;
     });
 
-    return { daily, weekly, monthly, yearly };
+    // Simple forecast (average of last 3 periods * remaining time)
+    const forecastDaily = daily * 1.1; // Placeholder
+    const forecastWeekly = weekly * 1.05;
+    const forecastMonthly = monthly * 1.08;
+    const forecastYearly = yearly * 1.1;
+
+    return {
+      daily, prevDaily, forecastDaily,
+      weekly, prevWeekly, forecastWeekly,
+      monthly, prevMonthly, forecastMonthly,
+      yearly, prevYearly, forecastYearly,
+    };
   }, [bookings]);
 
-  // Profit
-  const profit = useMemo(() => ({
-    daily: revenueByPeriod.daily - expenseTotal,
-    weekly: revenueByPeriod.weekly - expenseTotal,
-    monthly: revenueByPeriod.monthly - expenseTotal,
-    yearly: revenueByPeriod.yearly - expenseTotal,
-  }), [revenueByPeriod, expenseTotal]);
+  // Period-specific expenses
+  const getPeriodExpenses = (start, end) => {
+    return expenses.reduce((total, e) => {
+      const date = new Date(e.date);
+      if (date >= start && date <= end) return total + e.amount;
+      return total;
+    }, 0);
+  };
 
-  // Booking Stats
+  const profit = useMemo(() => {
+    const now = new Date();
+    const dailyExpenses = getPeriodExpenses(startOfDay(now), endOfDay(now));
+    const weeklyExpenses = getPeriodExpenses(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
+    const monthlyExpenses = getPeriodExpenses(startOfMonth(now), endOfMonth(now));
+    const yearlyExpenses = getPeriodExpenses(startOfYear(now), endOfYear(now));
+
+    return {
+      daily: revenueByPeriod.daily - dailyExpenses,
+      weekly: revenueByPeriod.weekly - weeklyExpenses,
+      monthly: revenueByPeriod.monthly - monthlyExpenses,
+      yearly: revenueByPeriod.yearly - yearlyExpenses,
+    };
+  }, [revenueByPeriod, expenses]);
+
+  // Enhanced Booking Stats
   const bookingStats = useMemo(() => {
     const total = revenueByPeriod.yearly;
     const avg = bookings.length ? Math.round(total / bookings.length) : 0;
     const highest = bookings.reduce((max, b) => Math.max(max, Number(b.amount) || 0), 0);
-    return { total, avg, highest, count: bookings.length };
+    const todaysBookings = bookings.filter(b => isToday(new Date(b.date)));
+    const avgBookingTime = bookings.length ? bookings.reduce((sum, b) => sum + (new Date(b.date).getHours() || 0), 0) / bookings.length : 0;
+    return { total, avg, highest, count: bookings.length, todaysCount: todaysBookings.length, avgBookingTime };
   }, [revenueByPeriod, bookings]);
 
-  // Expense Categories
+  // Hourly data for daily
+  const hourlyData = useMemo(() => {
+    const today = new Date();
+    const hours = eachHourOfInterval({ start: startOfDay(today), end: endOfDay(today) });
+    return hours.map(hour => {
+      const hourBookings = bookings.filter(b => {
+        const date = new Date(b.date);
+        return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear() && date.getHours() === hour.getHours();
+      });
+      return { hour: format(hour, 'HH:00'), revenue: hourBookings.reduce((sum, b) => sum + Number(b.amount), 0) };
+    });
+  }, [bookings]);
+
+  // Day-by-day for weekly
+  const dailyDataWeekly = useMemo(() => {
+    const week = eachDayOfInterval({ start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+    return week.map(day => {
+      const dayBookings = bookings.filter(b => {
+        const date = new Date(b.date);
+        return date.getDate() === day.getDate() && date.getMonth() === day.getMonth() && date.getFullYear() === day.getFullYear();
+      });
+      return { day: format(day, 'EEE d'), revenue: dayBookings.reduce((sum, b) => sum + Number(b.amount), 0), profit: dayBookings.reduce((sum, b) => sum + Number(b.amount), 0) - getPeriodExpenses(startOfDay(day), endOfDay(day)) };
+    });
+  }, [bookings, expenses]);
+
+  // Month-by-month for yearly
+  const monthlyDataYearly = useMemo(() => {
+    const year = eachMonthOfInterval({ start: startOfYear(new Date()), end: endOfYear(new Date()) });
+    return year.map(month => {
+      const monthStart = startOfMonth(month);
+      const monthEnd = endOfMonth(month);
+      const monthBookings = bookings.filter(b => {
+        const date = new Date(b.date);
+        return date >= monthStart && date <= monthEnd;
+      });
+      const monthExpenses = getPeriodExpenses(monthStart, monthEnd);
+      return { month: format(month, 'MMM'), revenue: monthBookings.reduce((sum, b) => sum + Number(b.amount), 0), profit: monthBookings.reduce((sum, b) => sum + Number(b.amount), 0) - monthExpenses };
+    });
+  }, [bookings, expenses]);
+
+  // Goals
+  const goals = useMemo(() => ({
+    daily: { target: 5000, achieved: revenueByPeriod.daily },
+    weekly: { target: 25000, achieved: revenueByPeriod.weekly },
+    monthly: { target: 100000, achieved: revenueByPeriod.monthly },
+    yearly: { target: 1200000, achieved: revenueByPeriod.yearly },
+  }), [revenueByPeriod]);
+
+  // Top Bookings
+  const getTopBookings = (start, end, limit = 5) => {
+    return bookings
+      .filter(b => {
+        const date = new Date(b.date);
+        return date >= start && date <= end;
+      })
+      .sort((a, b) => Number(b.amount) - Number(a.amount))
+      .slice(0, limit);
+  };
+
+  // Expense Categories with percentages
   const categoryTotals = useMemo(() => {
     const map = {};
     CATEGORIES.forEach(c => map[c] = 0);
@@ -78,24 +189,45 @@ const FundsDashboard = () => {
       const cat = e.category || "Other";
       map[cat] = (map[cat] || 0) + e.amount;
     });
+    const total = Object.values(map).reduce((sum, v) => sum + v, 0);
     return Object.entries(map)
-      .map(([name, amount]) => ({ name, amount }))
+      .map(([name, amount]) => ({ name, amount, percentage: total ? Math.round((amount / total) * 100) : 0 }))
       .sort((a, b) => b.amount - a.amount);
   }, [expenses]);
 
-  const handleAddExpense = (e) => {
+  // Recurring Expenses
+  const [showRecurring, setShowRecurring] = useState(false);
+  const recurringExpenses = useMemo(() => expenses.filter(e => e.isRecurring), [expenses]);
+
+  // Editing state for expenses
+  const [editingExpense, setEditingExpense] = useState(null);
+
+  const handleAddExpense = (e, isRecurring = false) => {
     e.preventDefault();
     if (desc.trim() && amount > 0) {
-      addExpense(desc.trim(), Number(amount), category);
-      setDesc(""); setAmount(""); setCategory(CATEGORIES[0]);
+      if (editingExpense) {
+        editExpense(editingExpense.id, desc.trim(), Number(amount), category, selectedTags, isRecurring);
+        setEditingExpense(null);
+      } else {
+        addExpense(desc.trim(), Number(amount), category, selectedTags, isRecurring);
+      }
+      setDesc(""); setAmount(""); setCategory(CATEGORIES[0]); setSelectedTags([]);
     }
   };
 
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setDesc(expense.description);
+    setAmount(expense.amount.toString());
+    setCategory(expense.category);
+    setSelectedTags(expense.tags || []);
+  };
+
   const exportCSV = () => {
-    const headers = "Type,Date,Description,Amount,Category\n";
+    const headers = "Type,Date,Description,Amount,Category,Tags\n";
     const rows = [
-      ...bookings.map(b => `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName},${b.amount},`),
-      ...expenses.map(e => `Expense,${format(new Date(e.date), "yyyy-MM-dd")},${e.description},${-e.amount},${e.category || "Other"}`)
+      ...bookings.map(b => `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName},${b.amount} ,,`),
+      ...expenses.map(e => `Expense,${format(new Date(e.date), "yyyy-MM-dd")},${e.description},${-e.amount},${e.category || "Other"},${e.tags?.join(',') || ''}`)
     ];
     const csv = headers + rows.join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -127,7 +259,7 @@ const FundsDashboard = () => {
                   </h1>
                 </div>
                 <p className="text-lg text-blue-50 max-w-md">
-                  Real-time financial insights, profit tracking, and expense management.
+                  Advanced financial insights with forecasts, comparisons, and customizable tracking.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -137,7 +269,7 @@ const FundsDashboard = () => {
                     <span className="text-blue-100">Bookings</span>
                   </div>
                   <div className="text-blue-100">
-                    ₹{bookingStats.total.toLocaleString()} revenue • ₹{expenseTotal.toLocaleString()} spent
+                    ₹{bookingStats.total.toLocaleString()} revenue • ₹{expenseTotal.toLocaleString()} spent • Avg time: {Math.round(bookingStats.avgBookingTime)}h
                   </div>
                 </div>
               </div>
@@ -194,20 +326,66 @@ const FundsDashboard = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {activeTab === "daily" && <DailyFunds revenue={revenueByPeriod.daily} profit={profit.daily} bookingStats={bookingStats} />}
-              {activeTab === "weekly" && <WeeklyFunds revenue={revenueByPeriod.weekly} profit={profit.weekly} />}
-              {activeTab === "monthly" && <MonthlyFunds revenue={revenueByPeriod.monthly} profit={profit.monthly} />}
-              {activeTab === "yearly" && <YearlyFunds revenue={revenueByPeriod.yearly} profit={profit.yearly} />}
+              {activeTab === "daily" && (
+                <DailyFunds
+                  revenue={revenueByPeriod.daily}
+                  prevRevenue={revenueByPeriod.prevDaily}
+                  forecast={revenueByPeriod.forecastDaily}
+                  profit={profit.daily}
+                  bookingStats={bookingStats}
+                  hourlyData={hourlyData}
+                  topBookings={getTopBookings(startOfDay(new Date()), endOfDay(new Date()))}
+                  goal={goals.daily}
+                />
+              )}
+              {activeTab === "weekly" && (
+                <WeeklyFunds
+                  revenue={revenueByPeriod.weekly}
+                  prevRevenue={revenueByPeriod.prevWeekly}
+                  forecast={revenueByPeriod.forecastWeekly}
+                  profit={profit.weekly}
+                  dailyData={dailyDataWeekly}
+                  topBookings={getTopBookings(startOfWeek(new Date(), { weekStartsOn: 1 }), endOfWeek(new Date(), { weekStartsOn: 1 }))}
+                  goal={goals.weekly}
+                />
+              )}
+              {activeTab === "monthly" && (
+                <MonthlyFunds
+                  revenue={revenueByPeriod.monthly}
+                  prevRevenue={revenueByPeriod.prevMonthly}
+                  forecast={revenueByPeriod.forecastMonthly}
+                  profit={profit.monthly}
+                  topBookings={getTopBookings(startOfMonth(new Date()), endOfMonth(new Date()))}
+                  goal={goals.monthly}
+                />
+              )}
+              {activeTab === "yearly" && (
+                <YearlyFunds
+                  revenue={revenueByPeriod.yearly}
+                  prevRevenue={revenueByPeriod.prevYearly}
+                  forecast={revenueByPeriod.forecastYearly}
+                  profit={profit.yearly}
+                  monthlyData={monthlyDataYearly}
+                  topBookings={getTopBookings(startOfYear(new Date()), endOfYear(new Date()))}
+                  goal={goals.yearly}
+                />
+              )}
               {activeTab === "expenses" && (
                 <ExpenseTracker
                   expenses={expenses}
+                  recurringExpenses={recurringExpenses}
                   removeExpense={removeExpense}
                   handleAddExpense={handleAddExpense}
                   desc={desc} setDesc={setDesc}
                   amount={amount} setAmount={setAmount}
                   category={category} setCategory={setCategory}
+                  selectedTags={selectedTags} setSelectedTags={setSelectedTags}
                   expenseTotal={expenseTotal}
                   categoryTotals={categoryTotals}
+                  showRecurring={showRecurring}
+                  setShowRecurring={setShowRecurring}
+                  editingExpense={editingExpense}
+                  handleEditExpense={handleEditExpense}
                   exportCSV={exportCSV}
                 />
               )}
@@ -227,177 +405,548 @@ const FundsDashboard = () => {
           background-size: 200% 200%;
           animation: gradient-x 8s ease infinite;
         }
+        .daily-bg { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #f59e0b 100%); }
+        .weekly-bg { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #3b82f6 100%); }
+        .monthly-bg { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #22c55e 100%); }
+        .yearly-bg { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #a855f7 100%); }
+        .expenses-bg { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 50%, #ef4444 100%); }
       `}</style>
     </DashboardLayout>
   );
 };
 
-// === ENHANCED COMPONENTS ===
-
-const DailyFunds = ({ revenue, profit, bookingStats }) => (
-  <div className="space-y-8">
-    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-      <BarChart3 className="text-indigo-600" /> Daily Overview
-    </h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {[
-        { label: "Revenue", value: revenue, gradient: "from-emerald-500 to-teal-600" },
-        { label: "Expenses", value: revenue - profit, gradient: "from-rose-500 to-pink-600" },
-        { label: "Net Profit", value: profit, gradient: profit >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600" },
-        { label: "Avg Booking", value: bookingStats.avg, gradient: "from-blue-500 to-indigo-600" },
-      ].map((stat, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: i * 0.1 }}
-          className={`bg-gradient-to-br ${stat.gradient} p-6 rounded-2xl text-white shadow-xl backdrop-blur-sm`}
-        >
-          <p className="text-white/80 text-sm font-medium">{stat.label}</p>
-          <p className="text-3xl font-bold mt-1">₹{stat.value.toLocaleString()}</p>
-        </motion.div>
-      ))}
+// === DAILY FUNDS - Timeline & Hourly Focus UI ===
+const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hourlyData, topBookings, goal }) => (
+  <div className="space-y-6 daily-bg rounded-3xl p-6">
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-bold text-amber-800 flex items-center gap-3">
+        <Sun className="text-amber-600" /> Daily Timeline - {format(new Date(), "MMM d, yyyy")}
+      </h2>
+      <div className="flex items-center gap-2 text-sm text-amber-700">
+        <ClockIcon size={16} /> Live Updates
+      </div>
     </div>
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.4 }}
-      className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
-    >
-      <div className="h-80"><FundsChart period="daily" /></div>
-    </motion.div>
+
+    {/* Horizontal Timeline Stats */}
+    <div className="overflow-x-auto pb-4">
+      <div className="flex gap-4 min-w-max">
+        {hourlyData.map((hour, i) => (
+          <motion.div
+            key={hour.hour}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="bg-white/80 p-3 rounded-xl shadow-md flex flex-col items-center min-w-[100px]"
+          >
+            <p className="text-xs text-gray-600">{hour.hour}</p>
+            <p className={`text-lg font-bold ${hour.revenue > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
+              ₹{hour.revenue.toLocaleString()}
+            </p>
+            {hour.revenue > 0 && <TrendingUp size={12} className="text-emerald-500" />}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+
+    {/* Compact Stats Row */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <StatCardCompact stat={{ label: "Today", value: revenue, prev: prevRevenue, icon: TrendingUp, color: "emerald" }} />
+      <StatCardCompact stat={{ label: "Forecast", value: forecast, icon: Zap, color: "blue" }} />
+      <StatCardCompact stat={{ label: "Profit", value: profit, prev: profit - (revenue - prevRevenue), icon: DollarSign, color: profit >= 0 ? "green" : "red" }} />
+      <StatCardCompact stat={{ label: "Bookings", value: bookingStats.todaysCount, icon: Activity, color: "indigo" }} />
+    </div>
+
+    <GoalProgress goal={goal} period="Daily" color="amber" />
+
+    {/* Quick Actions */}
+    <div className="bg-white/70 backdrop-blur-sm p-4 rounded-2xl shadow-lg">
+      <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+        <Plus className="text-amber-600" /> Quick Actions
+      </h3>
+      <div className="flex flex-wrap gap-2">
+
+       <div className="flex gap-3">
+  <a
+    href="/new-booking"
+    className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-sm hover:bg-amber-200 transition inline-block"
+  >
+    New Booking
+  </a>
+
+  <a
+    href="/add-revenue"
+    className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200 transition inline-block"
+  >
+    Add Revenue
+  </a>
+
+  <a
+    href="/log-expense"
+    className="px-3 py-1 bg-rose-100 text-rose-700 rounded-lg text-sm hover:bg-rose-200 transition inline-block"
+  >
+    Log Expense
+  </a>
+</div>
+
+      </div>
+    </div>
+
+    {/* Top Bookings List */}
+    <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
+      <h3 className="font-semibold text-amber-800 mb-3">Peak Bookings</h3>
+      <ul className="space-y-2">
+        {topBookings.map((b, i) => (
+          <li key={b.id} className="flex justify-between items-center p-2 bg-amber-50 rounded-lg">
+            <span>{b.customerName} - {format(parseISO(b.date), 'HH:mm')}</span>
+            <span className="font-bold text-emerald-600">₹{Number(b.amount).toLocaleString()}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    {profit < 0 && (
+      <AlertCard message="Daily dip detected! Consider promotions." color="amber" />
+    )}
   </div>
 );
 
-const WeeklyFunds = ({ revenue, profit }) => <PeriodCard title="Weekly" revenue={revenue} profit={profit} period="weekly" />;
-const MonthlyFunds = ({ revenue, profit }) => <PeriodCard title="Monthly" revenue={revenue} profit={profit} period="monthly" />;
-const YearlyFunds = ({ revenue, profit }) => <PeriodCard title="Yearly" revenue={revenue} profit={profit} period="yearly" />;
+// === WEEKLY FUNDS - Calendar Grid UI ===
+const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBookings, goal }) => (
+  <div className="space-y-6 weekly-bg rounded-3xl p-6">
+    <h2 className="text-2xl font-bold text-blue-800 flex items-center gap-3">
+      <CalendarDays className="text-blue-600" /> Weekly Grid Overview
+    </h2>
 
-const PeriodCard = ({ title, revenue, profit, period }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="space-y-6"
-  >
-    <h2 className="text-2xl font-bold text-gray-800">{title} Performance</h2>
-    <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-      <div className="h-80"><FundsChart period={period} /></div>
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6 text-lg font-medium">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Revenue:</span>
-          <span className="text-emerald-600">₹{revenue.toLocaleString()}</span>
+    {/* 7-Day Grid */}
+    <div className="grid grid-cols-7 gap-2">
+      {dailyData.map((day, i) => (
+        <motion.div
+          key={day.day}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={`p-3 rounded-xl border-2 ${day.profit >= 0 ? 'border-emerald-300 bg-emerald-50' : 'border-rose-300 bg-rose-50'}`}
+        >
+          <p className="text-xs font-medium text-gray-700">{day.day}</p>
+          <p className="text-sm font-bold text-emerald-600">₹{day.revenue.toLocaleString()}</p>
+          <p className={`text-xs ${day.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {day.profit >= 0 ? `+₹${day.profit}` : `-₹${Math.abs(day.profit)}`}
+          </p>
+        </motion.div>
+      ))}
+    </div>
+
+    {/* Summary Cards in Row */}
+    <div className="flex flex-col md:flex-row gap-4">
+      <SummaryCard title="This Week" value={revenue} prev={prevRevenue} type="revenue" />
+      <SummaryCard title="Forecast" value={forecast} type="forecast" />
+      <SummaryCard title="Profit" value={profit} type="profit" />
+    </div>
+
+    <GoalProgress goal={goal} period="Weekly" color="blue" />
+
+    {/* Weekly Insights */}
+    <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
+      <h3 className="font-semibold text-blue-800 mb-3">Insights</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div className="text-center">
+          <p className="font-bold text-blue-600">Best Day</p>
+          <p className="text-gray-700">{dailyData.reduce((max, d) => d.revenue > max.revenue ? d : max, dailyData[0])?.day}</p>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Profit:</span>
-          <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>
-            ₹{profit.toLocaleString()}
-          </span>
+        <div className="text-center">
+          <p className="font-bold text-emerald-600">Total Bookings</p>
+          <p className="text-gray-700">{dailyData.reduce((sum, d) => sum + (d.revenue > 0 ? 1 : 0), 0)}</p>
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-purple-600">Avg Daily</p>
+          <p className="text-gray-700">₹{Math.round(revenue / 7).toLocaleString()}</p>
         </div>
       </div>
     </div>
-  </motion.div>
+
+    {/* Top Bookings as Cards */}
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {topBookings.slice(0, 3).map(b => (
+        <BookingCard key={b.id} booking={b} />
+      ))}
+    </div>
+  </div>
 );
 
-const ExpenseTracker = ({ expenses, removeExpense, handleAddExpense, desc, setDesc, amount, setAmount, category, setCategory, expenseTotal, categoryTotals }) => (
-  <div className="space-y-8">
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-        <Receipt className="text-rose-600" /> Expense Tracker
-      </h2>
-      <div className="text-xl font-bold text-rose-600">
-        Total: ₹{expenseTotal.toLocaleString()}
+// === MONTHLY FUNDS - Heatmap & Trends UI ===
+const MonthlyFunds = ({ revenue, prevRevenue, forecast, profit, topBookings, goal }) => (
+  <div className="space-y-6 monthly-bg rounded-3xl p-6">
+    <h2 className="text-2xl font-bold text-green-800 flex items-center gap-3">
+      <CalendarRange className="text-green-600" /> Monthly Heatmap
+    </h2>
+
+    {/* Heatmap Placeholder - Days of Month */}
+    <div className="grid grid-cols-7 gap-1 h-48">
+      {Array.from({ length: 31 }, (_, i) => (
+        <div
+          key={i}
+          className={`aspect-square rounded ${i % 2 === 0 ? 'bg-emerald-400' : 'bg-gray-200'}`}
+          title={`Day ${i + 1}`}
+        />
+      ))}
+    </div>
+
+    {/* Trend Line Chart Placeholder */}
+    <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
+      <div className="flex items-center gap-2 mb-3">
+        <LineChart className="text-green-600" />
+        <h3 className="font-semibold text-green-800">Revenue Trend</h3>
+      </div>
+      <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
+        <LineChart size={40} className="text-gray-400" />
+        <span className="ml-2 text-gray-500">Trend Visualization</span>
       </div>
     </div>
 
-    <motion.form
-      onSubmit={handleAddExpense}
+    {/* Vertical Stats */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <VerticalStat label="Revenue" value={revenue} prev={prevRevenue} />
+      <VerticalStat label="Forecast" value={forecast} />
+      <VerticalStat label="Profit" value={profit} color={profit >= 0 ? "green" : "red"} />
+    </div>
+
+    <GoalProgress goal={goal} period="Monthly" color="green" />
+
+    {/* Top Customers */}
+    <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
+      <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+        <Users className="text-green-600" /> Top Customers
+      </h3>
+      <ul className="space-y-2">
+        {topBookings.map((b, i) => (
+          <li key={b.id} className="flex justify-between items-center p-2 bg-green-50 rounded">
+            <span className="font-medium">{b.customerName}</span>
+            <span className="text-green-600">₹{Number(b.amount).toLocaleString()}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
+
+// === YEARLY FUNDS - Quarterly Layers UI ===
+const YearlyFunds = ({ revenue, prevRevenue, forecast, profit, monthlyData, topBookings, goal }) => (
+  <div className="space-y-6 yearly-bg rounded-3xl p-6">
+    <h2 className="text-2xl font-bold text-purple-800 flex items-center gap-3">
+      <CalendarCheck className="text-purple-600" /> Yearly Layers
+    </h2>
+
+    {/* Stacked Monthly Bars */}
+    <div className="space-y-4">
+      {monthlyData.map((month, i) => (
+        <motion.div
+          key={month.month}
+          initial={{ height: 0 }}
+          animate={{ height: 60 }}
+          className="bg-white/70 rounded-xl p-3 flex justify-between items-center shadow-md"
+        >
+          <p className="font-semibold text-purple-700">{month.month}</p>
+          <div className="flex items-center gap-4">
+            <p className="text-emerald-600 font-bold">₹{month.revenue.toLocaleString()}</p>
+            <div className="w-20 bg-purple-100 rounded-full h-4">
+              <div className="bg-purple-500 h-4 rounded-full" style={{ width: `${(month.revenue / Math.max(...monthlyData.map(m => m.revenue))) * 100}%` }} />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+
+    {/* Quarterly Summary Table */}
+    <div className="bg-white/70 rounded-2xl shadow-lg overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="bg-purple-100">
+            <th className="p-3 text-left text-purple-700">Quarter</th>
+            <th className="p-3 text-right text-purple-700">Revenue</th>
+            <th className="p-3 text-right text-purple-700">Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[1,2,3,4].map(q => {
+            const qRevenue = monthlyData.slice((q-1)*3, q*3).reduce((sum, m) => sum + m.revenue, 0);
+            const qProfit = monthlyData.slice((q-1)*3, q*3).reduce((sum, m) => sum + m.profit, 0);
+            return (
+              <tr key={q} className="border-t">
+                <td className="p-3">Q{q}</td>
+                <td className="p-3 text-right text-emerald-600 font-bold">₹{qRevenue.toLocaleString()}</td>
+                <td className="p-3 text-right font-bold">{qProfit >= 0 ? <span className="text-green-600">+₹{qProfit.toLocaleString()}</span> : <span className="text-red-600">-₹{Math.abs(qProfit).toLocaleString()}</span>}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <GoalProgress goal={goal} period="Yearly" color="purple" />
+
+    {/* Achievement Badge */}
+    {revenue > goal.target * 0.8 && (
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className="bg-white/70 p-4 rounded-2xl shadow-lg text-center"
+      >
+        <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+        <p className="text-purple-800 font-bold">80% Yearly Goal Achieved!</p>
+      </motion.div>
+    )}
+
+    {/* Top Bookings Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {topBookings.slice(0, 4).map(b => (
+        <div key={b.id} className="bg-white/70 p-3 rounded-xl shadow-md flex justify-between">
+          <div>
+            <p className="font-medium">{b.customerName}</p>
+            <p className="text-sm text-gray-600">{format(new Date(b.date), 'MMM yyyy')}</p>
+          </div>
+          <p className="text-purple-600 font-bold">₹{Number(b.amount).toLocaleString()}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// === EXPENSES - Advanced Form & Tags UI ===
+const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddExpense, desc, setDesc, amount, setAmount, category, setCategory, selectedTags, setSelectedTags, expenseTotal, categoryTotals, showRecurring, setShowRecurring, editingExpense, handleEditExpense, exportCSV }) => (
+  <div className="space-y-6 expenses-bg rounded-3xl p-6">
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-bold text-red-800 flex items-center gap-3">
+        <Receipt className="text-red-600" /> Advanced Expense Manager
+      </h2>
+      <div className="text-xl font-bold text-red-700">Total: ₹{expenseTotal.toLocaleString()}</div>
+    </div>
+
+    {/* Multi-field Form with Tags and Edit Mode */}
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+      className="bg-white/70 p-6 rounded-2xl shadow-lg border border-red-100"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <input
-          type="text"
-          placeholder="Description"
-          value={desc}
-          onChange={e => setDesc(e.target.value)}
-          className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
-        />
-        <input
-          type="number"
-          min="0.01"
-          step="0.01"
-          placeholder="Amount"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
-        />
-        <select
-          value={category}
-          onChange={e => setCategory(e.target.value)}
-          className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition"
-        >
-          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+      <form onSubmit={(e) => handleAddExpense(e, true)} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <input
+            type="text"
+            placeholder="Description *"
+            value={desc}
+            onChange={e => setDesc(e.target.value)}
+            className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200"
+          />
+          <input
+            type="number"
+            placeholder="Amount *"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200"
+          />
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200"
+          >
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        {/* Tags Selector */}
+        <div>
+          <label className="block text-sm font-medium text-red-700 mb-2">Tags</label>
+          <div className="flex flex-wrap gap-2">
+            {TAGS.map(tag => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                  selectedTags.includes(tag)
+                    ? 'bg-red-500 text-white'
+                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-4 pt-4">
+          <label className="flex items-center gap-2 text-sm text-red-600">
+            <input type="checkbox" className="rounded text-red-500" /> Recurring
+          </label>
+          <button
+            type="button"
+            onClick={() => setShowRecurring(!showRecurring)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
+              showRecurring ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            <Repeat size={16} /> {showRecurring ? 'Show All' : 'Recurring'}
+          </button>
+          <button
+            type="submit"
+            className="ml-auto flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 shadow-md"
+          >
+            {editingExpense ? <Edit3 size={16} /> : <Plus size={16} />} {editingExpense ? 'Update' : 'Add'}
+          </button>
+        </div>
+      </form>
+      {editingExpense && (
         <button
-          type="submit"
-          className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-medium rounded-xl hover:from-indigo-700 hover:to-blue-700 transform hover:scale-105 transition shadow-md"
+          onClick={() => { setEditingExpense(null); setDesc(""); setAmount(""); setCategory(CATEGORIES[0]); setSelectedTags([]); }}
+          className="text-sm text-red-500 underline mt-2"
         >
-          <Plus size={20} /> Add Expense
+          Cancel Edit
         </button>
-      </div>
-    </motion.form>
+      )}
+    </motion.div>
 
-    <div className="grid md:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Tag className="text-indigo-600" /> Top Categories
+    {/* Filter Bar */}
+    <div className="bg-white/70 p-4 rounded-xl shadow-sm flex items-center gap-4">
+      <Search className="text-red-400" />
+      <input placeholder="Search expenses..." className="flex-1 outline-none text-sm bg-transparent" />
+      <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm">
+        <Download size={16} /> Export
+      </button>
+    </div>
+
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* Enhanced Category Pie with Colors */}
+      <div className="bg-white/70 p-6 rounded-2xl shadow-lg">
+        <h3 className="text-lg font-semibold text-red-800 mb-4 flex items-center gap-2">
+          <PieChart className="text-red-600" /> Breakdown
         </h3>
-        <div className="space-y-3">
+        <ul className="space-y-3">
           {categoryTotals.map((c, i) => (
-            <div key={i} className="flex justify-between items-center">
-              <span className="font-medium text-gray-700">{c.name}</span>
-              <span className="text-rose-600 font-bold">-₹{c.amount.toLocaleString()}</span>
+            <li key={i} className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: `hsl(${i * 60}, 70%, 50%)` }} />
+                <span className="font-medium text-red-700">{c.name}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-red-600 font-bold">₹{c.amount.toLocaleString()}</span>
+                <span className="text-xs text-gray-500 ml-2">({c.percentage}%)</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Expenses List with Edit/Delete and Upload */}
+      <div className="bg-white/70 p-6 rounded-2xl shadow-lg overflow-hidden">
+        <h3 className="text-lg font-semibold text-red-800 mb-4">Transactions ({showRecurring ? recurringExpenses.length : expenses.length})</h3>
+        <div className="max-h-72 overflow-y-auto space-y-2">
+          {(showRecurring ? recurringExpenses : expenses).slice(0, 10).map(e => (
+            <div key={e.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg hover:bg-red-100 transition">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <div>
+                  <p className="font-medium text-red-700">{e.description}</p>
+                  <p className="text-xs text-gray-600">{e.category} • {format(new Date(e.date), 'MMM d')}</p>
+                  {e.tags && <p className="text-xs text-gray-500">{e.tags.join(', ')}</p>}
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-red-600">-₹{e.amount.toLocaleString()}</p>
+                <div className="flex gap-1 mt-1">
+                  <button onClick={() => handleEditExpense(e)} className="p-1 text-blue-500 hover:bg-blue-100 rounded">
+                    <Edit3 size={14} />
+                  </button>
+                  <label className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-pointer">
+                    <Upload size={14} />
+                    <input type="file" className="hidden" />
+                  </label>
+                  <button onClick={() => removeExpense(e.id)} className="p-1 text-red-500 hover:bg-red-100 rounded">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
       </div>
+    </div>
 
-      <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <h3 className="text-lg font-semibold mb-4">Recent Expenses</h3>
-        <div className="max-h-64 overflow-y-auto">
-          {expenses.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No expenses yet</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 border-b">
-                  <th className="pb-2">Date</th>
-                  <th className="pb-2">Desc</th>
-                  <th className="pb-2">Amt</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.slice(0, 5).map(e => (
-                  <tr key={e.id} className="border-b hover:bg-gray-50 transition">
-                    <td className="py-2 text-gray-600">{format(new Date(e.date), "MMM d")}</td>
-                    <td className="py-2 font-medium">{e.description}</td>
-                    <td className="py-2 text-rose-600 font-medium">-₹{e.amount.toFixed(0)}</td>
-                    <td className="py-2 text-right">
-                      <button onClick={() => removeExpense(e.id)} className="text-red-500 hover:text-red-700">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+    {/* Upcoming Recurring Alert */}
+    {recurringExpenses.length > 0 && (
+      <AlertCard message={`${recurringExpenses.length} recurring expenses due soon.`} color="red" />
+    )}
+  </div>
+);
+
+// === SHARED COMPONENTS ===
+const StatCardCompact = ({ stat }) => {
+  const change = stat.prev ? ((stat.value - stat.prev) / stat.prev * 100) : 0;
+  const Icon = stat.icon;
+  const color = stat.color;
+  return (
+    <div className={`p-4 rounded-xl bg-white shadow-md flex flex-col items-center gap-2 text-${color}-600`}>
+      <Icon size={20} />
+      <p className="text-2xl font-bold">{stat.value.toLocaleString()}</p>
+      <p className="text-xs text-gray-500">{stat.label}</p>
+      {stat.prev && <p className={`text-xs ${change >= 0 ? 'text-green-500' : 'text-red-500'}`}>{change.toFixed(1)}%</p>}
+    </div>
+  );
+};
+
+const SummaryCard = ({ title, value, prev, type }) => (
+  <div className="flex-1 p-4 bg-white rounded-xl shadow-md">
+    <p className="text-sm text-gray-600">{title}</p>
+    <p className={`text-2xl font-bold ${type === 'profit' ? (value >= 0 ? 'text-green-600' : 'text-red-600') : 'text-blue-600'}`}>
+      ₹{value.toLocaleString()}
+    </p>
+    {prev && <p className="text-xs text-gray-500">vs prev: {(value - prev).toLocaleString()}</p>}
+  </div>
+);
+
+const VerticalStat = ({ label, value, prev, color = "blue" }) => (
+  <div className="bg-white/70 p-4 rounded-xl shadow-lg text-center">
+    <p className="text-sm text-gray-600">{label}</p>
+    <p className={`text-3xl font-bold text-${color}-600`}>₹{value.toLocaleString()}</p>
+    {prev && <p className="text-xs text-gray-500">Prev: ₹{prev.toLocaleString()}</p>}
+  </div>
+);
+
+const GoalProgress = ({ goal, period, color }) => (
+  <div className={`bg-white/70 p-4 rounded-xl shadow-lg`}>
+    <div className="flex justify-between items-center mb-2">
+      <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+        <Target className={`text-${color}-600`} /> {period} Goal
+      </h3>
+      <span className={`text-${color}-600`}>{Math.round((goal.achieved / goal.target) * 100)}%</span>
+    </div>
+    <div className="w-full bg-gray-200 rounded-full h-4">
+      <motion.div
+        className={`h-4 rounded-full bg-${color}-500`}
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min((goal.achieved / goal.target) * 100, 100)}%` }}
+        transition={{ duration: 1 }}
+      />
+    </div>
+    <div className="flex justify-between text-xs mt-2 text-gray-600">
+      <span>₹{goal.achieved.toLocaleString()}</span>
+      <span>of ₹{goal.target.toLocaleString()}</span>
     </div>
   </div>
+);
+
+const BookingCard = ({ booking }) => (
+  <div className="bg-white/70 p-4 rounded-xl shadow-md">
+    <p className="font-medium text-gray-800">{booking.customerName}</p>
+    <p className="text-sm text-gray-600">{format(new Date(booking.date), 'MMM d')}</p>
+    <p className="text-lg font-bold text-emerald-600 mt-2">₹{Number(booking.amount).toLocaleString()}</p>
+  </div>
+);
+
+const AlertCard = ({ message, color }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`border-l-4 border-${color}-500 bg-${color}-50 p-4 rounded-lg flex items-center gap-3`}
+  >
+    <AlertTriangle className={`text-${color}-500 w-5 h-5`} />
+    <p className={`text-${color}-800`}>{message}</p>
+  </motion.div>
 );
 
 export default FundsDashboard;

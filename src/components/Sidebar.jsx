@@ -9,6 +9,8 @@ import {
   LogOut,
   User,
   Loader2,
+  PlusCircle,
+  Receipt,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "../context/AuthContext";
@@ -19,13 +21,18 @@ const Sidebar = () => {
   const { user, logout, loading } = useAuth();
   const [profileImage, setProfileImage] = useState(null);
 
-  const links = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard },
-    { name: "Bookings", path: "/bookings", icon: Book },
-    { name: "Funds", path: "/funds", icon: Wallet },
-    { name: "Reports", path: "/reports", icon: BarChart3 },
-    { name: "Settings", path: "/settings", icon: Settings },
-  ];
+ const links = [
+  { name: "Dashboard", path: "/", icon: LayoutDashboard },
+  { name: "Bookings", path: "/bookings", icon: Book },
+  { name: "Funds", path: "/funds", icon: Wallet },
+
+  // NEW
+  { name: "Add Revenue", path: "/add-revenue", icon: PlusCircle },
+  { name: "Add Log Expense", path: "/log-expense", icon: Receipt },
+
+  { name: "Reports", path: "/reports", icon: BarChart3 },
+  { name: "Settings", path: "/settings", icon: Settings },
+];
 
   // Fetch stored image on mount
   useEffect(() => {
