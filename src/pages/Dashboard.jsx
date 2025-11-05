@@ -19,10 +19,20 @@ import {
   subMonths,
   isWithinInterval,
 } from "date-fns";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 
 const Dashboard = () => {
   const { bookings = [], isLoading: bookingsLoading } = useBooking();
-  const { totals = {}, topSources = [] } = useFunds();
+  const { totals = {} } = useFunds();
   const { expenses = [] } = useExpense();
   const { user } = useAuth();
 
@@ -122,6 +132,27 @@ const Dashboard = () => {
   }, [bookings, searchTerm, filterStatus]);
 
   const recentBookings = filteredBookings.slice(0, 5);
+
+  // Top Revenue Sources (computed automatically from bookings, grouped by customerName)
+  const topSources = useMemo(() => {
+    const grouped = bookings.reduce((acc, b) => {
+      const name = b.customerName || 'Unknown';
+      if (!acc[name]) {
+        acc[name] = { name, bookings: 0, revenue: 0 };
+      }
+      acc[name].bookings += 1;
+      acc[name].revenue += (b.amount || 0);
+      return acc;
+    }, {});
+    const sortedSources = Object.values(grouped)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5); // Top 5 sources
+    const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
+    return sortedSources.map((source, i) => ({
+      ...source,
+      fill: colors[i] || '#6366f1'
+    }));
+  }, [bookings]);
 
   return (
     <DashboardLayout>
@@ -368,37 +399,67 @@ const Dashboard = () => {
               </div>
             </motion.div>
 
-            {/* Top Revenue Sources */}
+            {/* Top Revenue Sources with Horizontal Bar Chart */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              transition={{ delay: 0.3 }}
               className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-6"
             >
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-xl font-bold text-gray-800">Top Revenue Sources</h3>
                 <FileText size={22} className="text-gray-400" />
               </div>
-              <div className="space-y-4">
-                {topSources.length > 0 ? (
-                  topSources.map((source, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                          {source.name[0].toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">{source.name}</p>
-                          <p className="text-xs text-gray-500">{source.bookings} bookings</p>
-                        </div>
-                      </div>
-                      <p className="text-sm font-bold text-indigo-600">₹{source.revenue.toLocaleString()}</p>
-                    </div>
-                  ))
+
+              <div className="h-64">
+                {topSources && topSources.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={topSources}
+                      layout="vertical"
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis type="number" hide={true} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        tick={{ fontSize: 12, fill: '#64748b' }}
+                        width={120}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                        labelFormatter={(label) => label}
+                        contentStyle={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="revenue" minWidth={100}>
+                        {topSources.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 ) : (
-                  <p className="text-sm text-gray-500 text-center py-8">No data available</p>
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-sm text-gray-500 text-center py-8">No data available</p>
+                  </div>
                 )}
               </div>
+
+              {/* Legend / Quick Stats */}
+              {topSources && topSources.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {topSources.map((source, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: source.fill }}></div>
+                        <span className="font-medium text-gray-700">{source.name}</span>
+                      </div>
+                      <span className="text-gray-500">{source.bookings} bookings</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </div>
 
@@ -406,7 +467,7 @@ const Dashboard = () => {
       </div>
 
       {/* === ANIMATIONS === */}
-      <style jsx>{`
+      <style>{`
         @keyframes gradient-x {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
