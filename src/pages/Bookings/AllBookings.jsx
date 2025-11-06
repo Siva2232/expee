@@ -16,22 +16,35 @@ import {
   Globe,
   Sun,
   Moon,
+  Filter,
+  Search,
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import BookingTable from "./BookingTable";
-import SearchBar from "../../components/SearchBar";
-import FilterMenu from "../../components/FilterMenu";
 import { useBooking } from "../../context/BookingContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 const AllBookings = () => {
   const { bookings, removeBooking, updateBookingStatus, isLoading } = useBooking();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [darkMode, setDarkMode] = useState(false); // Dark Mode State
+  const [darkMode, setDarkMode] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const statusRef = useRef(null);
 
-  // Category Icons Map
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (statusRef.current && !statusRef.current.contains(e.target)) {
+        setShowStatusDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Category Icons & Colors
   const categoryIcons = {
     flight: Plane,
     bus: Bus,
@@ -73,7 +86,7 @@ const AllBookings = () => {
     });
   }, [bookings, searchTerm, filterStatus, filterCategory]);
 
-  // Stats: totalRevenue + basePay
+  // Stats
   const stats = useMemo(() => {
     const total = bookings.length;
     const confirmed = bookings.filter((b) => normalize(b.status) === "confirmed").length;
@@ -82,6 +95,14 @@ const AllBookings = () => {
     const basePayTotal = bookings.reduce((sum, b) => sum + (b.basePay || 0), 0);
     return { total, confirmed, pending, revenue, basePayTotal };
   }, [bookings]);
+
+  // Status Options
+  const statusOptions = [
+    { value: "all", label: "All Status", color: "text-gray-600 dark:text-gray-400" },
+    { value: "pending", label: "Pending", color: "text-amber-600 dark:text-amber-400" },
+    { value: "confirmed", label: "Confirmed", color: "text-emerald-600 dark:text-emerald-400" },
+    { value: "cancelled", label: "Cancelled", color: "text-red-600 dark:text-red-400" },
+  ];
 
   return (
     <DashboardLayout>
@@ -168,29 +189,79 @@ const AllBookings = () => {
 
           {/* === SEARCH & FILTERS === */}
           <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
+            {/* Search Bar */}
             <div className="flex-1 max-w-md">
-              <SearchBar
-                placeholder="Search by name, email, phone, platform..."
-                onSearch={setSearchTerm}
-                value={searchTerm}
-                darkMode={darkMode}
-              />
+              <div className={`relative flex items-center ${darkMode ? "bg-gray-800" : "bg-white"} rounded-xl shadow-sm border ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
+                <Search size={20} className={`absolute left-4 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, phone, platform..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full pl-12 pr-4 py-3.5 rounded-xl bg-transparent outline-none transition text-base ${
+                    darkMode ? "text-white placeholder-gray-400" : "text-gray-900 placeholder-gray-500"
+                  }`}
+                />
+              </div>
             </div>
+
+            {/* Filters */}
             <div className="flex gap-3 flex-wrap">
-              <FilterMenu
-                label="Category"
-                options={[
-                  { value: "all", label: "All Categories" },
-                  { value: "flight", label: "Flight" },
-                  { value: "hotel", label: "Hotel" },
-                  { value: "cab", label: "Cab" },
-                  { value: "bus", label: "Bus" },
-                  { value: "train", label: "Train" },
-                ]}
-                value={filterCategory}
-                onChange={setFilterCategory}
-                darkMode={darkMode}
-              />
+              {/* Category Filter */}
+              <div className="relative">
+                <button
+                  onClick={() => setFilterCategory(filterCategory === "all" ? "flight" : "all")}
+                  className={`flex items-center gap-2 px-4 py-3.5 rounded-xl font-medium transition-all ${
+                    filterCategory === "all"
+                      ? darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300"
+                  }`}
+                >
+                  <Filter size={18} />
+                  Category
+                  {filterCategory !== "all" && <span className="capitalize">{filterCategory}</span>}
+                </button>
+              </div>
+
+              {/* Status Dropdown */}
+              <div ref={statusRef} className="relative">
+                <button
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                  className={`flex items-center gap-2 px-4 py-3.5 rounded-xl font-medium transition-all ${
+                    darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  <Filter size={18} />
+                  Status
+                  {filterStatus !== "all" && (
+                    <span className={statusOptions.find(s => s.value === filterStatus)?.color}>
+                      {statusOptions.find(s => s.value === filterStatus)?.label}
+                    </span>
+                  )}
+                </button>
+
+                {showStatusDropdown && (
+                  <div className={`absolute top-full right-0 mt-2 w-48 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-xl border overflow-hidden z-20`}>
+                    {statusOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setFilterStatus(opt.value);
+                          setShowStatusDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 flex items-center justify-between transition-all ${
+                          filterStatus === opt.value
+                            ? darkMode ? "bg-blue-900/50 text-blue-300" : "bg-blue-50 text-blue-700"
+                            : darkMode ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {filterStatus === opt.value && <span className="text-green-500">Check</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

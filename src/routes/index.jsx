@@ -22,6 +22,7 @@ import { BookingProvider } from "../context/BookingContext";
 import { FundsProvider } from "../context/FundsContext";
 import { ExpenseProvider } from "../context/ExpenseContext";
 import { NotificationProvider } from "../context/NotificationContext";
+import { TaskProvider } from "../context/TaskContext";
 
 const AppRoutes = () => {
   return (
@@ -29,6 +30,7 @@ const AppRoutes = () => {
       <FundsProvider>
         <ExpenseProvider>
           <NotificationProvider>
+            <TaskProvider>
           <Routes>
             {/* Auth */}
             <Route path="/signin" element={<SignIn />} />
@@ -59,6 +61,7 @@ const AppRoutes = () => {
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+            </TaskProvider>
           </NotificationProvider>
         </ExpenseProvider>
       </FundsProvider>

@@ -1,11 +1,11 @@
 // src/components/Navbar.jsx
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sparkles, Bell, Search, LogOut, Wallet } from "lucide-react";
+import { Menu, X, Bell, Search, LogOut, Wallet, Plus, DollarSign } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useNotifications } from "../context/NotificationContext";
-import { Link } from "react-router-dom";
+
 const Navbar = () => {
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -21,184 +21,190 @@ const Navbar = () => {
     }
   };
 
+  const walletData = [
+    { name: "AlHind Agency", amount: "₹1000", gradient: "from-indigo-500 to-purple-500", border: "indigo-200", text: "indigo-600" },
+    { name: "Akbar Agency", amount: "₹500", gradient: "from-emerald-500 to-teal-500", border: "emerald-200", text: "emerald-600" },
+  ];
+
   return (
-    <header className="relative w-full bg-white/80 backdrop-blur-2xl border-b border-gray-200/50 shadow-xl">
-      {/* Gradient glow */}
+    <header className="relative w-full bg-white/70 backdrop-blur-2xl border-b border-white/20 shadow-lg overflow-hidden">
+      {/* Full-Bleed Animated Gradient */}
+      <motion.div
+        className="absolute inset-0 opacity-20 pointer-events-none"
+        animate={{
+          background: [
+            "linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)",
+            "linear-gradient(90deg, #ec4899 0%, #6366f1 50%, #a855f7 100%)",
+            "linear-gradient(90deg, #a855f7 0%, #ec4899 50%, #6366f1 100%)",
+          ],
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none" />
 
-      <div className="relative flex items-center justify-between px-6 py-5">
+      {/* Full Width, 5 Items Evenly Spaced */}
+      <div className="relative flex items-center justify-between w-full py-3 px-4 sm:px-6">
+        
+        {/* Left: Wallets (2) */}
+        <div className="hidden lg:flex items-center gap-5">
+          {walletData.map((wallet, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ scale: 1.04, y: -1 }}
+              className={`group flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r ${wallet.gradient}/10 rounded-2xl border border-${wallet.border}/40 backdrop-blur-md shadow-sm cursor-pointer transition-all`}
+            >
+              <Wallet size={18} className={`text-${wallet.text} group-hover:animate-pulse`} />
+              <div>
+                <p className={`text-sm font-semibold text-${wallet.text}`}>{wallet.name}</p>
+                <p className="text-base font-bold text-gray-800">{wallet.amount}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
-        {/* Logo & Title */}
+        {/* Center: Search Bar */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-3"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="hidden md:flex items-center gap-3 px-6 py-2.5 bg-white/60 backdrop-blur-xl rounded-full border border-white/40 shadow-inner flex-1 max-w-md mx-8"
         >
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg">
-            <div className="w-full h-full rounded-xl bg-white flex items-center justify-center backdrop-blur-sm">
-              <Sparkles size={18} className="text-indigo-600" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            CRM
-          </h1>
+          <Search size={20} className="text-gray-500" />
+          <input
+            type="text"
+            placeholder="Search bookings, clients..."
+            className="bg-transparent outline-none text-sm flex-1 placeholder-gray-500 font-medium"
+          />
         </motion.div>
 
-        {/* Right Side: Wallets + Search + Notification + Logout + Mobile Menu */}
-        <div className="flex items-center gap-3">
-
-          {/* Wallets (Desktop) */}
-          <div className="hidden lg:flex items-center gap-3">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-200/30 backdrop-blur-sm"
-            >
-              <Wallet size={16} className="text-indigo-600" />
-              <div>
-                <p className="text-xs text-indigo-600 font-medium">Main Wallet</p>
-                <p className="text-sm font-bold text-gray-800">₹2000</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-200/30 backdrop-blur-sm"
-            >
-              <Wallet size={16} className="text-emerald-600" />
-              <div>
-                <p className="text-xs text-emerald-600 font-medium">Expense</p>
-                <p className="text-sm font-bold text-gray-800">₹1000</p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Search (Desktop) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100/70 rounded-full backdrop-blur-sm border border-gray-200/50"
-          >
-            <Search size={18} className="text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-transparent outline-none text-sm w-48 placeholder-gray-500"
-            />
-          </motion.div>
+        {/* Right: Bell + Logout + Menu */}
+        <div className="flex items-center gap-5">
 
           {/* Notification Bell */}
-<Link to="/notifications">
-  <motion.button
-    whileHover={{ scale: 1.1 }}
-    whileTap={{ scale: 0.95 }}
-    className="relative p-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all"
-  >
-    <Bell size={20} className="text-emerald-600" />
+          <Link to="/notifications">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative p-3 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 transition-all shadow-md"
+            >
+              <Bell size={22} className="text-emerald-600" />
+              {unreadCount > 0 && (
+                <>
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 min-w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </motion.span>
+                  <span className="absolute inset-0 rounded-full bg-red-400/30 animate-ping" />
+                </>
+              )}
+            </motion.button>
+          </Link>
 
-    {unreadCount > 0 && (
-      <>
-        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
-          {unreadCount > 99 ? "99+" : unreadCount}
-        </span>
-
-        <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
-      </>
-    )}
-  </motion.button>
-</Link>
-
-          {/* Logout Button (Desktop) */}
+          {/* Desktop Logout */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleLogout}
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-medium rounded-xl border border-red-200/30 transition-all"
+            className="hidden md:flex items-center gap-2.5 px-6 py-2.5 bg-red-500/10 hover:bg-red-500/15 text-red-600 font-semibold rounded-2xl border border-red-200/40 transition-all shadow-sm text-sm"
           >
             <LogOut size={18} />
-            <span className="text-sm">Logout</span>
+            Logout
           </motion.button>
 
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setOpen(!open)}
-            className="md:hidden p-2 rounded-xl bg-gray-100/70 hover:bg-gray-200/70 transition-all"
+            className="md:hidden p-2.5 rounded-xl bg-white/60 backdrop-blur-xl hover:bg-white/80 transition-all shadow-md"
           >
-            <motion.div
-              animate={{ rotate: open ? 180 : 0 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              {open ? <X size={22} /> : <Menu size={22} />}
+            <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 300 }}>
+              {open ? <X size={24} className="text-gray-700" /> : <Menu size={24} className="text-gray-700" />}
             </motion.div>
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu – Full Width, Balanced Spacing */}
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="md:hidden absolute top-full left-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-200/50 shadow-2xl overflow-hidden"
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="md:hidden absolute top-full left-0 w-full bg-white/90 backdrop-blur-2xl border-t border-white/30 shadow-2xl"
           >
-            <div className="p-6 space-y-6">
+            <div className="px-5 py-4 space-y-5">
 
-              {/* Search (Mobile) */}
-              <div className="flex items-center gap-3 px-4 py-3 bg-gray-100/70 rounded-2xl backdrop-blur-sm border border-gray-200/50">
-                <Search size={20} className="text-gray-500" />
+              {/* Mobile Search */}
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/40 shadow-inner">
+                <Search size={21} className="text-gray-600" />
                 <input
                   type="text"
                   placeholder="Search anything..."
-                  className="bg-transparent outline-none flex-1 text-sm placeholder-gray-500"
+                  className="bg-transparent outline-none flex-1 text-base placeholder-gray-500 font-medium"
                 />
               </div>
 
-              {/* Wallets (Mobile) */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 backdrop-blur-sm">
-                  <div className="flex items-center gap-2">
-                    <Wallet size={16} className="text-indigo-600" />
-                    <p className="text-xs font-medium text-indigo-600">Main Wallet</p>
-                  </div>
-                  <p className="text-lg font-bold text-gray-800 mt-1">₹1,84,500</p>
-                </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-200/30 backdrop-blur-sm">
-                  <div className="flex items-center gap-2">
-                    <Wallet size={16} className="text-emerald-600" />
-                    <p className="text-xs font-medium text-emerald-600">Expense</p>
-                  </div>
-                  <p className="text-lg font-bold text-gray-800 mt-1">₹42,300</p>
-                </div>
+              {/* Mobile Wallets */}
+              <div className="grid grid-cols-1 gap-4">
+                {walletData.map((wallet, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className={`p-4 rounded-2xl bg-gradient-to-br ${wallet.gradient}/10 border border-${wallet.border}/40 backdrop-blur-md shadow-md`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg bg-gradient-to-br ${wallet.gradient} shadow-md`}>
+                          <Wallet size={18} className="text-white" />
+                        </div>
+                        <div>
+                          <p className={`text-sm font-bold text-${wallet.text}`}>{wallet.name}</p>
+                          <p className="text-xl font-extrabold text-gray-800">{wallet.amount}</p>
+                        </div>
+                      </div>
+                      <DollarSign size={20} className="text-gray-400" />
+                    </div>
+                  </motion.div>
+                ))}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex-1 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-2xl shadow-lg"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2"
                 >
+                  <Plus size={20} />
                   New Booking
                 </motion.button>
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold rounded-2xl shadow-lg"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2"
                 >
+                  <DollarSign size={20} />
                   Add Expense
                 </motion.button>
               </div>
 
-              {/* Logout Button (Mobile) */}
+              {/* Mobile Logout */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleLogout}
-                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold rounded-2xl border border-red-200/30 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-red-500/10 hover:bg-red-500/15 text-red-600 font-bold rounded-2xl border border-red-200/40 transition-all flex items-center justify-center gap-2 shadow-md"
               >
-                <LogOut size={18} />
+                <LogOut size={20} />
                 Logout
               </motion.button>
             </div>

@@ -161,9 +161,11 @@ export const BookingProvider = ({ children }) => {
     if (!customerName?.trim()) throw new Error("Customer name is required");
     if (!email?.trim() || !/^\S+@\S+\.\S+$/.test(email))
       throw new Error("Valid email is required");
-    if (!contactNumber?.trim()) throw new Error("Contact number is required");
-    if (!/^\d{10}$/.test(contactNumber.replace(/[\s-]/g, "")))
-      throw new Error("Contact number must be 10 digits");
+
+    // ✅ Only require contact number, no digit length check
+    if (!contactNumber?.trim())
+      throw new Error("Contact number is required");
+
     if (!date) throw new Error("Date is required");
 
     if (basePay < 0) throw new Error("Base pay cannot be negative");
@@ -184,7 +186,7 @@ export const BookingProvider = ({ children }) => {
       id: `BK${Date.now()}${Math.floor(Math.random() * 1000)}`,
       customerName: customerName.trim(),
       email: email.trim().toLowerCase(),
-      contactNumber: contactNumber.trim(),
+      contactNumber: contactNumber.trim(), // ✅ No validation applied
       date,
       basePay: Number(basePay),
       commissionAmount: Number(commissionAmount),
@@ -216,12 +218,14 @@ export const BookingProvider = ({ children }) => {
 
     const booking = bookings.find((b) => b.id === id);
     const name = booking?.customerName?.split(" ")[0] || "Booking";
+
     const msg =
       newStatus === STATUS.CONFIRMED
         ? `${name}'s booking confirmed`
         : newStatus === STATUS.CANCELLED
         ? `${name}'s booking cancelled`
         : `${name}'s booking pending`;
+
     toast.success(msg);
   };
 

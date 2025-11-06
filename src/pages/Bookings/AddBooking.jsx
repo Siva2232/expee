@@ -6,7 +6,7 @@ import { useBooking, CATEGORY, STATUS } from "../../context/BookingContext";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Plus, User, Mail, Calendar, DollarSign, CheckCircle,
-  Phone, Globe, Plane, Bus, Train, Car, Hotel, Clock, TrendingUp
+  Phone, Globe, Plane, Bus, Train, Car, Hotel, Clock, TrendingUp, ChevronDown
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -20,15 +20,22 @@ const categories = [
 
 const platforms = [
   { value: "", label: "Select Platform" },
-  { value: "makemytrip", label: "MakeMyTrip" },
-  { value: "goibibo", label: "Goibibo" },
-  { value: "yatra", label: "Yatra" },
-  { value: "cleartrip", label: "ClearTrip" },
-  { value: "expedia", label: "Expedia" },
-  { value: "bookingcom", label: "Booking.com" },
-  { value: "agoda", label: "Agoda" },
-  { value: "direct", label: "Direct" },
-  { value: "other", label: "Other" },
+  { value: "alhind", label: "AlHind" },
+  { value: "akbar", label: "Akbar" },
+];
+
+// Country Codes with Flags
+const countryCodes = [
+  { code: "+91", country: "India", flag: "India" },
+  { code: "+1", country: "USA", flag: "USA" },
+  { code: "+44", country: "UK", flag: "UK" },
+  { code: "+971", country: "UAE", flag: "UAE" },
+  { code: "+966", country: "Saudi Arabia", flag: "Saudi" },
+  { code: "+974", country: "Qatar", flag: "Qatar" },
+  { code: "+965", country: "Kuwait", flag: "Kuwait" },
+  { code: "+968", country: "Oman", flag: "Oman" },
+  { code: "+973", country: "Bahrain", flag: "Bahrain" },
+  { code: "+61", country: "Australia", flag: "Australia" },
 ];
 
 export default function AddBooking() {
@@ -39,6 +46,7 @@ export default function AddBooking() {
     customerName: "",
     email: "",
     contactNumber: "",
+    selectedCountryCode: "+91", // Default India
     date: format(new Date(), "yyyy-MM-dd"),
     baseAmount: "",
     commissionAmount: "",
@@ -48,11 +56,14 @@ export default function AddBooking() {
     category: CATEGORY.FLIGHT,
   });
 
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Live Total Revenue = Base + Commission + Markup
+  // Combine country code + number
+  const fullContact = `${form.selectedCountryCode} ${form.contactNumber}`.trim();
+
   const totalRevenue = useMemo(() => {
     const base = parseFloat(form.baseAmount) || 0;
     const comm = parseFloat(form.commissionAmount) || 0;
@@ -66,10 +77,13 @@ export default function AddBooking() {
     if (!form.customerName.trim()) e.customerName = "Name is required";
     if (!form.email.trim()) e.email = "Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Invalid email";
-    if (!form.contactNumber.trim()) e.contactNumber = "Contact number is required";
-    else if (!/^\d{10}$/.test(form.contactNumber.replace(/[\s-]/g, "")))
-      e.contactNumber = "Enter valid 10-digit number";
     if (!form.date) e.date = "Date is required";
+
+    // Contact Validation: At least 10 digits, no upper limit
+    const digitsOnly = form.contactNumber.replace(/\D/g, "");
+    if (digitsOnly.length < 10) {
+      e.contactNumber = "Contact number must have at least 10 digits";
+    }
 
     if (form.baseAmount && Number(form.baseAmount) < 0)
       e.baseAmount = "Base amount cannot be negative";
@@ -77,10 +91,6 @@ export default function AddBooking() {
       e.commissionAmount = "Commission cannot be negative";
     if (form.markupAmount && Number(form.markupAmount) < 0)
       e.markupAmount = "Markup cannot be negative";
-
-    // Platform is optional but encouraged for all categories
-    // (you can make it required by uncommenting below)
-    // if (!form.platform) e.platform = "Platform is required";
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -95,7 +105,7 @@ export default function AddBooking() {
       addBooking({
         customerName: form.customerName.trim(),
         email: form.email.trim(),
-        contactNumber: form.contactNumber.trim(),
+        contactNumber: fullContact,
         date: form.date,
         baseAmount: form.baseAmount ? Number(form.baseAmount) : 0,
         commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : 0,
@@ -114,7 +124,6 @@ export default function AddBooking() {
     }
   };
 
-  // Platform is always shown now
   const showPlatform = true;
 
   return (
@@ -178,10 +187,65 @@ export default function AddBooking() {
                 {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
               </div>
 
-              {/* Contact Number */}
+              {/* Contact Number with Country Code Dropdown */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Phone size={18} /> Contact Number</label>
-                <input type="text" value={form.contactNumber} onChange={(e) => setForm({ ...form, contactNumber: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.contactNumber ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="9876543210" maxLength="15" disabled={submitting} />
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                  <Phone size={18} /> Contact Number
+                </label>
+                <div className="flex gap-0">
+                  {/* Country Code Dropdown */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                      className="flex items-center gap-1.5 px-3 py-3 bg-gray-50 border border-gray-300 rounded-l-xl hover:bg-gray-100 transition whitespace-nowrap text-sm font-medium text-gray-700"
+                      disabled={submitting}
+                    >
+                      <span className="text-lg">{countryCodes.find(c => c.code === form.selectedCountryCode)?.flag}</span>
+                      <span>{form.selectedCountryCode}</span>
+                      <ChevronDown size={16} className={`transition-transform ${showCountryDropdown ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {/* Dropdown */}
+                    {showCountryDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-10"
+                      >
+                        {countryCodes.map((c) => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, selectedCountryCode: c.code });
+                              setShowCountryDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-gray-50 transition text-sm ${form.selectedCountryCode === c.code ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"}`}
+                          >
+                            <span className="text-lg">{c.flag}</span>
+                            <span>{c.country}</span>
+                            <span className="ml-auto text-gray-500">{c.code}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Phone Input */}
+                  <input
+                    type="text"
+                    value={form.contactNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^\d]/g, ""); // Only digits
+                      setForm({ ...form, contactNumber: val });
+                    }}
+                    className={`flex-1 px-4 py-3 rounded-r-xl border ${errors.contactNumber ? "border-red-500" : "border-gray-300"} border-l-0 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
+                    placeholder="9876543210"
+                    disabled={submitting}
+                  />
+                </div>
                 {errors.contactNumber && <p className="mt-1 text-sm text-red-600">{errors.contactNumber}</p>}
               </div>
 
@@ -213,16 +277,15 @@ export default function AddBooking() {
                 {errors.markupAmount && <p className="mt-1 text-sm text-red-600">{errors.markupAmount}</p>}
               </div>
 
-              {/* Platform - Always visible */}
+              {/* Platform */}
               {showPlatform && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ duration: 0.2 }}>
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Globe size={18} /> Booking Platform</label>
-                  <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.platform ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} disabled={submitting}>
+                  <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" disabled={submitting}>
                     {platforms.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
                   </select>
-                  {errors.platform && <p className="mt-1 text-sm text-red-600">{errors.platform}</p>}
                 </motion.div>
               )}
 
@@ -236,7 +299,7 @@ export default function AddBooking() {
                 </select>
               </div>
 
-              {/* ==== APPLIED SECTION ==== */}
+              {/* Applied Summary */}
               <div className="mt-8 p-5 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-200">
                 <h3 className="text-lg font-bold text-indigo-800 mb-3 flex items-center gap-2">
                   <CheckCircle size={20} /> Applied Summary
@@ -264,6 +327,10 @@ export default function AddBooking() {
                       <span className="font-medium capitalize">{platforms.find(p => p.value === form.platform)?.label || "-"}</span>
                     </div>
                   )}
+                  <div className="flex justify-between sm:col-span-2">
+                    <span className="text-gray-600">Contact:</span>
+                    <span className="font-medium">{fullContact || "-"}</span>
+                  </div>
                   <div className="flex justify-between sm:col-span-2">
                     <span className="text-gray-600">Status:</span>
                     <span className={`font-medium ${form.status === STATUS.CONFIRMED ? "text-emerald-700" : form.status === STATUS.CANCELLED ? "text-red-700" : "text-amber-700"}`}>
