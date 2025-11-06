@@ -435,7 +435,7 @@ const Reports = () => {
               {reportTab === "overview" && (
                 <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                    <div className="bg-white p-6 rounded-2xl shadow-xl">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <Activity size={20} className="text-indigo-600 dark:text-indigo-400" /> Daily Revenue
                       </h3>
@@ -450,7 +450,7 @@ const Reports = () => {
                       </ResponsiveContainer>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                    <div className="bg-white p-6 rounded-2xl shadow-xl">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <PieChart size={20} className="text-indigo-600 dark:text-indigo-400" /> Profit Margin
                       </h3>
@@ -467,7 +467,7 @@ const Reports = () => {
               )}
 
               {reportTab === "revenue" && (
-                <motion.div key="revenue" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                <motion.div key="revenue" className="bg-white  p-6 rounded-2xl shadow-xl">
                   <h3 className="text-lg font-semibold mb-4">Revenue Trend</h3>
                   <ResponsiveContainer width="100%" height={400}>
                     <AreaChart data={dailyRevenue}>
@@ -482,7 +482,7 @@ const Reports = () => {
               )}
 
               {reportTab === "expenses" && (
-                <motion.div key="expenses" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                <motion.div key="expenses" className="bg-white  p-6 rounded-2xl shadow-xl">
                   <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <RechartsPie>
@@ -511,7 +511,7 @@ const Reports = () => {
                     topCustomers.map((c, i) => (
                       <div
                         key={i}
-                        className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md flex items-center justify-between"
+                        className="bg-white p-5 rounded-xl shadow-md flex items-center justify-between"
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
