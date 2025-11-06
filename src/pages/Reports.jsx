@@ -482,8 +482,8 @@ const Reports = () => {
               )}
 
               {reportTab === "expenses" && (
-                <motion.div key="expenses" className="bg-white  p-6 rounded-2xl shadow-xl">
-                  <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
+                <motion.div key="expenses" className="bg-white p-6 rounded-2xl shadow-xl">
+                  <h3 className="text-lg dark:bg-gray-800 font-semibold mb-4">Expense Breakdown</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <RechartsPie>
                       <Pie
