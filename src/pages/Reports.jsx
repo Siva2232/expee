@@ -1,5 +1,5 @@
 // src/pages/Reports.jsx
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   format,
   startOfMonth,
@@ -26,7 +26,6 @@ import {
   ArrowUpRight, ArrowDownRight, IndianRupee, ShoppingCart,
   FileDown, Gauge, Sparkles,
   Fuel, Briefcase,
-  Moon, Sun,
 } from "lucide-react";
 
 import {
@@ -46,26 +45,6 @@ const REPORT_TABS = [
 const Reports = () => {
   const { bookings = [] } = useBooking();
   const { expenses = [] } = useExpense();
-
-  // ────────────────────── DARK MODE (default = LIGHT) ──────────────────────
-  const [darkMode, setDarkMode] = useState(() => {
-    // **Default to false (light)**
-    const saved = localStorage.getItem("reportsDarkMode");
-    return saved === "true";               // only true if user previously toggled ON
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-      localStorage.setItem("reportsDarkMode", "true");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("reportsDarkMode", "false");
-    }
-  }, [darkMode]);
-
-  const toggleDark = () => setDarkMode(prev => !prev);
 
   // ────────────────────── STATE ──────────────────────
   const [dateRange, setDateRange] = useState("thisMonth");
@@ -237,20 +216,15 @@ const Reports = () => {
   // ────────────────────── RENDER ──────────────────────
   return (
     <DashboardLayout>
-      {/* ROOT – default light, dark: utilities handle dark mode */}
-      <div className="min-h-screen transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
+      {/* ROOT – Light mode only */}
+      <div className="min-h-screen bg-gray-50 text-gray-900">
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
 
           {/* HEADER */}
           <motion.header
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`
-              relative overflow-hidden rounded-3xl p-8 shadow-2xl text-white
-              bg-gradient-to-br
-              from-indigo-600 via-purple-600 to-pink-600
-              dark:from-gray-800 dark:via-gray-700 dark:to-gray-900
-            `}
+            className="relative overflow-hidden rounded-3xl p-8 shadow-2xl text-white bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
           >
             <div className="absolute inset-0 opacity-20">
               <div className="absolute -top-20 -left-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
@@ -285,9 +259,6 @@ const Reports = () => {
                 <button onClick={exportPDF} className="flex items-center gap-2 px-5 py-3 bg-white text-indigo-600 font-semibold rounded-xl shadow-md hover:shadow-lg transition">
                   <FileDown size={18} /> PDF
                 </button>
-                <button onClick={toggleDark} className="p-3 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition">
-                  {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
               </div>
             </div>
           </motion.header>
@@ -298,11 +269,7 @@ const Reports = () => {
               <select
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
-                className={`
-                  px-5 py-3 rounded-xl border text-sm font-medium flex items-center gap-2 shadow-sm transition
-                  bg-white/80 dark:bg-gray-800 border-gray-200 dark:border-gray-700
-                  text-gray-900 dark:text-white
-                `}
+                className="px-5 py-3 rounded-xl border text-sm font-medium flex items-center gap-2 shadow-sm transition bg-white/80 border-gray-200"
               >
                 <option value="thisMonth">This Month</option>
                 <option value="lastMonth">Last Month</option>
@@ -320,11 +287,7 @@ const Reports = () => {
                     startDate={customStart}
                     endDate={customEnd}
                     placeholderText="Start"
-                    className={`
-                      px-4 py-2 rounded-lg border text-sm
-                      bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700
-                      text-gray-900 dark:text-white
-                    `}
+                    className="px-4 py-2 rounded-lg border text-sm bg-white border-gray-200"
                   />
                   <DatePicker
                     selected={customEnd}
@@ -334,30 +297,24 @@ const Reports = () => {
                     endDate={customEnd}
                     minDate={customStart}
                     placeholderText="End"
-                    className={`
-                      px-4 py-2 rounded-lg border text-sm
-                      bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700
-                      text-gray-900 dark:text-white
-                    `}
+                    className="px-4 py-2 rounded-lg border text-sm bg-white border-gray-200"
                   />
                 </div>
               )}
             </div>
 
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+            <div className="flex bg-gray-100 p-1 rounded-xl">
               {REPORT_TABS.map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setReportTab(tab.id)}
-                    className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition
-                      ${reportTab === tab.id
-                        ? "bg-white dark:bg-gray-700 shadow-md text-indigo-600"
-                        : "text-gray-600 dark:text-gray-400"
-                      }
-                    `}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                      reportTab === tab.id
+                        ? "bg-white shadow-md text-indigo-600"
+                        : "text-gray-600"
+                    }`}
                   >
                     <Icon size={16} />
                     {tab.label}
@@ -385,10 +342,7 @@ const Reports = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   whileHover={{ y: -6, scale: 1.02 }}
-                  className={`
-                    p-6 rounded-2xl shadow-xl text-white
-                    bg-gradient-to-br from-${kpi.color}-500 to-${kpi.color}-600
-                  `}
+                  className={`p-6 rounded-2xl shadow-xl text-white bg-gradient-to-br from-${kpi.color}-500 to-${kpi.color}-600`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -413,9 +367,9 @@ const Reports = () => {
               {reportTab === "overview" && (
                 <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
-                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-                        <Activity size={20} className="text-indigo-600 dark:text-indigo-400" /> Daily Revenue
+                    <div className="bg-white p-6 rounded-2xl shadow-xl">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
+                        <Activity size={20} className="text-indigo-600" /> Daily Revenue
                       </h3>
                       <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={dailyRevenue}>
@@ -428,9 +382,9 @@ const Reports = () => {
                       </ResponsiveContainer>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
-                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-                        <PieChart size={20} className="text-indigo-600 dark:text-indigo-400" /> Profit Margin
+                    <div className="bg-white p-6 rounded-2xl shadow-xl">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-900">
+                        <PieChart size={20} className="text-indigo-600" /> Profit Margin
                       </h3>
                       <ResponsiveContainer width="100%" height={300}>
                         <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" data={[{ value: profitMargin }]}>
@@ -438,15 +392,15 @@ const Reports = () => {
                           <Tooltip />
                         </RadialBarChart>
                       </ResponsiveContainer>
-                      <p className="text-center mt-4 text-3xl font-bold text-emerald-600 dark:text-emerald-400">{profitMargin}%</p>
+                      <p className="text-center mt-4 text-3xl font-bold text-emerald-600">{profitMargin}%</p>
                     </div>
                   </div>
                 </motion.div>
               )}
 
               {reportTab === "revenue" && (
-                <motion.div key="revenue" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Revenue Trend</h3>
+                <motion.div key="revenue" className="bg-white p-6 rounded-2xl shadow-xl">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Revenue Trend</h3>
                   <ResponsiveContainer width="100%" height={400}>
                     <AreaChart data={dailyRevenue}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -460,8 +414,8 @@ const Reports = () => {
               )}
 
               {reportTab === "expenses" && (
-                <motion.div key="expenses" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Expense Breakdown</h3>
+                <motion.div key="expenses" className="bg-white p-6 rounded-2xl shadow-xl">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Expense Breakdown</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <RechartsPie>
                       <Pie
@@ -484,21 +438,21 @@ const Reports = () => {
               {reportTab === "customers" && (
                 <motion.div key="customers" className="space-y-4">
                   {topCustomers.length === 0 ? (
-                    <p className="text-center text-gray-500 dark:text-gray-400">No customer data</p>
+                    <p className="text-center text-gray-500">No customer data</p>
                   ) : (
                     topCustomers.map((c, i) => (
-                      <div key={i} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md flex items-center justify-between">
+                      <div key={i} className="bg-white p-5 rounded-xl shadow-md flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
                             {i + 1}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">{c.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">₹{c.amount.toLocaleString()}</p>
+                            <p className="font-semibold text-gray-900">{c.name}</p>
+                            <p className="text-sm text-gray-500">₹{c.amount.toLocaleString()}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-indigo-600 dark:text-indigo-400">
+                          <p className="font-bold text-indigo-600">
                             {totalRevenue > 0 ? (c.amount / totalRevenue * 100).toFixed(1) : 0}%
                           </p>
                         </div>
