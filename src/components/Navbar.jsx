@@ -1,10 +1,25 @@
 // src/components/Navbar.jsx
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sparkles, Bell, Search } from "lucide-react";
-
+import { Menu, X, Sparkles, Bell, Search, LogOut, Wallet } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useNotifications } from "../context/NotificationContext";
+import { Link } from "react-router-dom";
 const Navbar = () => {
+  const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/signin", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <header className="relative w-full bg-white/80 backdrop-blur-2xl border-b border-gray-200/50 shadow-xl">
@@ -25,12 +40,37 @@ const Navbar = () => {
             </div>
           </div>
           <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            CRM Compass Travel
+            CRM
           </h1>
         </motion.div>
 
-        {/* Right Side: Search + Notification + Mobile Menu */}
-        <div className="flex items-center gap-4">
+        {/* Right Side: Wallets + Search + Notification + Logout + Mobile Menu */}
+        <div className="flex items-center gap-3">
+
+          {/* Wallets (Desktop) */}
+          <div className="hidden lg:flex items-center gap-3">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-200/30 backdrop-blur-sm"
+            >
+              <Wallet size={16} className="text-indigo-600" />
+              <div>
+                <p className="text-xs text-indigo-600 font-medium">Main Wallet</p>
+                <p className="text-sm font-bold text-gray-800">₹1,84,500</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-200/30 backdrop-blur-sm"
+            >
+              <Wallet size={16} className="text-emerald-600" />
+              <div>
+                <p className="text-xs text-emerald-600 font-medium">Expense</p>
+                <p className="text-sm font-bold text-gray-800">₹42,300</p>
+              </div>
+            </motion.div>
+          </div>
 
           {/* Search (Desktop) */}
           <motion.div
@@ -47,13 +87,35 @@ const Navbar = () => {
           </motion.div>
 
           {/* Notification Bell */}
+<Link to="/notifications">
+  <motion.button
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.95 }}
+    className="relative p-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all"
+  >
+    <Bell size={20} className="text-emerald-600" />
+
+    {unreadCount > 0 && (
+      <>
+        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+          {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+
+        <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+      </>
+    )}
+  </motion.button>
+</Link>
+
+          {/* Logout Button (Desktop) */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="relative p-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 transition-all"
+            onClick={handleLogout}
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-medium rounded-xl border border-red-200/30 transition-all"
           >
-            <Bell size={20} className="text-emerald-600" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
+            <LogOut size={18} />
+            <span className="text-sm">Logout</span>
           </motion.button>
 
           {/* Mobile Menu Toggle */}
@@ -93,22 +155,22 @@ const Navbar = () => {
                 />
               </div>
 
-              {/* Decorative Cards */}
-              <div className="grid grid-cols-2 gap-4">
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 backdrop-blur-sm"
-                >
-                  <p className="text-xs font-medium text-indigo-600">Total Bookings</p>
-                  <p className="text-lg font-bold text-gray-800">1,284</p>
-                </motion.div>
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-200/30 backdrop-blur-sm"
-                >
-                  <p className="text-xs font-medium text-emerald-600">Revenue</p>
-                  <p className="text-lg font-bold text-gray-800">₹2.4M</p>
-                </motion.div>
+              {/* Wallets (Mobile) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/30 backdrop-blur-sm">
+                  <div className="flex items-center gap-2">
+                    <Wallet size={16} className="text-indigo-600" />
+                    <p className="text-xs font-medium text-indigo-600">Main Wallet</p>
+                  </div>
+                  <p className="text-lg font-bold text-gray-800 mt-1">₹1,84,500</p>
+                </div>
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-200/30 backdrop-blur-sm">
+                  <div className="flex items-center gap-2">
+                    <Wallet size={16} className="text-emerald-600" />
+                    <p className="text-xs font-medium text-emerald-600">Expense</p>
+                  </div>
+                  <p className="text-lg font-bold text-gray-800 mt-1">₹42,300</p>
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -128,6 +190,17 @@ const Navbar = () => {
                   Add Expense
                 </motion.button>
               </div>
+
+              {/* Logout Button (Mobile) */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleLogout}
+                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold rounded-2xl border border-red-200/30 transition-all flex items-center justify-center gap-2"
+              >
+                <LogOut size={18} />
+                Logout
+              </motion.button>
             </div>
           </motion.div>
         )}

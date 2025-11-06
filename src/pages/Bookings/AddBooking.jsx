@@ -1,28 +1,34 @@
 // src/pages/AddBooking.jsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
-import { useBooking } from "../../context/BookingContext";
+import { useBooking, CATEGORY, STATUS } from "../../context/BookingContext";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
-  Plus,
-  User,
-  Mail,
-  Calendar,
-  DollarSign,
-  CheckCircle,
-  Plane,
-  Bus,
-  Train,
-  Clock,
+  ArrowLeft, Plus, User, Mail, Calendar, DollarSign, CheckCircle,
+  Phone, Globe, Plane, Bus, Train, Car, Hotel, Clock, TrendingUp
 } from "lucide-react";
 import { format } from "date-fns";
 
 const categories = [
-  { value: "flight", label: "Flight", icon: Plane, color: "bg-blue-100 text-blue-700" },
-  { value: "bus", label: "Bus", icon: Bus, color: "bg-emerald-100 text-emerald-700" },
-  { value: "train", label: "Train", icon: Train, color: "bg-purple-100 text-purple-700" },
+  { value: CATEGORY.FLIGHT, label: "Flight", icon: Plane, color: "bg-blue-100 text-blue-700" },
+  { value: CATEGORY.BUS,    label: "Bus",    icon: Bus,     color: "bg-emerald-100 text-emerald-700" },
+  { value: CATEGORY.TRAIN,  label: "Train",  icon: Train,   color: "bg-purple-100 text-purple-700" },
+  { value: CATEGORY.CAB,    label: "Cab",    icon: Car,     color: "bg-orange-100 text-orange-700" },
+  { value: CATEGORY.HOTEL,  label: "Hotel",  icon: Hotel,   color: "bg-pink-100 text-pink-700" },
+];
+
+const platforms = [
+  { value: "", label: "Select Platform" },
+  { value: "makemytrip", label: "MakeMyTrip" },
+  { value: "goibibo", label: "Goibibo" },
+  { value: "yatra", label: "Yatra" },
+  { value: "cleartrip", label: "ClearTrip" },
+  { value: "expedia", label: "Expedia" },
+  { value: "bookingcom", label: "Booking.com" },
+  { value: "agoda", label: "Agoda" },
+  { value: "direct", label: "Direct" },
+  { value: "other", label: "Other" },
 ];
 
 export default function AddBooking() {
@@ -32,39 +38,69 @@ export default function AddBooking() {
   const [form, setForm] = useState({
     customerName: "",
     email: "",
+    contactNumber: "",
     date: format(new Date(), "yyyy-MM-dd"),
-    amount: "",
-    status: "pending",
-    category: "flight",
+    baseAmount: "",
+    commissionAmount: "",
+    markupAmount: "",
+    platform: "",
+    status: STATUS.PENDING,
+    category: CATEGORY.FLIGHT,
   });
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Live Total Revenue = Base + Commission + Markup
+  const totalRevenue = useMemo(() => {
+    const base = parseFloat(form.baseAmount) || 0;
+    const comm = parseFloat(form.commissionAmount) || 0;
+    const mark = parseFloat(form.markupAmount) || 0;
+    return (base + comm + mark).toFixed(2);
+  }, [form.baseAmount, form.commissionAmount, form.markupAmount]);
+
   const validate = () => {
     const e = {};
+
     if (!form.customerName.trim()) e.customerName = "Name is required";
     if (!form.email.trim()) e.email = "Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Invalid email";
+    if (!form.contactNumber.trim()) e.contactNumber = "Contact number is required";
+    else if (!/^\d{10}$/.test(form.contactNumber.replace(/[\s-]/g, "")))
+      e.contactNumber = "Enter valid 10-digit number";
     if (!form.date) e.date = "Date is required";
-    if (!form.amount || Number(form.amount) <= 0) e.amount = "Amount must be > 0";
+
+    if (form.baseAmount && Number(form.baseAmount) < 0)
+      e.baseAmount = "Base amount cannot be negative";
+    if (form.commissionAmount && Number(form.commissionAmount) < 0)
+      e.commissionAmount = "Commission cannot be negative";
+    if (form.markupAmount && Number(form.markupAmount) < 0)
+      e.markupAmount = "Markup cannot be negative";
+
+    // Platform is optional but encouraged for all categories
+    // (you can make it required by uncommenting below)
+    // if (!form.platform) e.platform = "Platform is required";
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
     try {
       addBooking({
-        id: `BK${Date.now()}`,
         customerName: form.customerName.trim(),
         email: form.email.trim(),
+        contactNumber: form.contactNumber.trim(),
         date: form.date,
-        amount: Number(form.amount),
+        baseAmount: form.baseAmount ? Number(form.baseAmount) : 0,
+        commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : 0,
+        markupAmount: form.markupAmount ? Number(form.markupAmount) : 0,
+        platform: form.platform,
         status: form.status,
         category: form.category,
       });
@@ -78,21 +114,17 @@ export default function AddBooking() {
     }
   };
 
+  // Platform is always shown now
+  const showPlatform = true;
+
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
 
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between mb-8"
-          >
-            <button
-              onClick={() => navigate("/bookings")}
-              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition"
-            >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-8">
+            <button onClick={() => navigate("/bookings")} className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition">
               <ArrowLeft size={20} />
               <span className="hidden sm:inline">Back to Bookings</span>
             </button>
@@ -101,13 +133,9 @@ export default function AddBooking() {
             </h1>
           </motion.div>
 
-          {/* Success Message */}
+          {/* Success */}
           {success && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-700"
-            >
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-700">
               <CheckCircle size={24} />
               <div>
                 <p className="font-semibold">Booking added!</p>
@@ -117,40 +145,20 @@ export default function AddBooking() {
           )}
 
           {/* Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sm:p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
 
               {/* Category */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-                  <Plane size={18} />
-                  Travel Type
+                  <Globe size={18} /> Travel Type
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                   {categories.map((cat) => (
-                    <label
-                      key={cat.value}
-                      className={`flex flex-col items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        form.category === cat.value
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300 hover:border-gray-400"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="category"
-                        value={cat.value}
-                        checked={form.category === cat.value}
-                        onChange={(e) => setForm({ ...form, category: e.target.value })}
-                        className="sr-only"
-                      />
+                    <label key={cat.value} className={`flex flex-col items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${form.category === cat.value ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}`}>
+                      <input type="radio" name="category" value={cat.value} checked={form.category === cat.value} onChange={(e) => setForm({ ...form, category: e.target.value, platform: "" })} className="sr-only" />
                       <cat.icon size={28} className={`mb-2 ${cat.color.replace("bg-", "text-").replace("100", "600")}`} />
-                      <span className="text-sm font-medium">{cat.label}</span>
+                      <span className="text-xs sm:text-sm font-medium">{cat.label}</span>
                     </label>
                   ))}
                 </div>
@@ -158,123 +166,118 @@ export default function AddBooking() {
 
               {/* Customer Name */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <User size={18} />
-                  Customer Name
-                </label>
-                <input
-                  type="text"
-                  value={form.customerName}
-                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                  className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.customerName ? "border-red-500" : "border-gray-300"
-                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
-                  placeholder="John Doe"
-                  disabled={submitting}
-                />
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><User size={18} /> Customer Name</label>
+                <input type="text" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.customerName ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="John Doe" disabled={submitting} />
                 {errors.customerName && <p className="mt-1 text-sm text-red-600">{errors.customerName}</p>}
               </div>
 
               {/* Email */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <Mail size={18} />
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.email ? "border-red-500" : "border-gray-300"
-                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
-                  placeholder="john@example.com"
-                  disabled={submitting}
-                />
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Mail size={18} /> Email</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.email ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="john@example.com" disabled={submitting} />
                 {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              </div>
+
+              {/* Contact Number */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Phone size={18} /> Contact Number</label>
+                <input type="text" value={form.contactNumber} onChange={(e) => setForm({ ...form, contactNumber: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.contactNumber ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="9876543210" maxLength="15" disabled={submitting} />
+                {errors.contactNumber && <p className="mt-1 text-sm text-red-600">{errors.contactNumber}</p>}
               </div>
 
               {/* Date */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <Calendar size={18} />
-                  Travel Date
-                </label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.date ? "border-red-500" : "border-gray-300"
-                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
-                  disabled={submitting}
-                />
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Calendar size={18} /> Travel/Check-in Date</label>
+                <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.date ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} disabled={submitting} />
                 {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
               </div>
 
-              {/* Amount */}
+              {/* Base Amount */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <DollarSign size={18} />
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.amount ? "border-red-500" : "border-gray-300"
-                  } bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`}
-                  placeholder="250.00"
-                  disabled={submitting}
-                />
-                {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><DollarSign size={18} /> Base Amount (Optional)</label>
+                <input type="number" min="0" step="0.01" value={form.baseAmount} onChange={(e) => setForm({ ...form, baseAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="250.00" disabled={submitting} />
+                {errors.baseAmount && <p className="mt-1 text-sm text-red-600">{errors.baseAmount}</p>}
               </div>
+
+              {/* Commission Amount */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><DollarSign size={18} /> Commission Amount</label>
+                <input type="number" min="0" step="0.01" value={form.commissionAmount} onChange={(e) => setForm({ ...form, commissionAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="50.00" disabled={submitting} />
+                {errors.commissionAmount && <p className="mt-1 text-sm text-red-600">{errors.commissionAmount}</p>}
+              </div>
+
+              {/* Markup Amount */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><TrendingUp size={18} /> Markup Amount</label>
+                <input type="number" min="0" step="0.01" value={form.markupAmount} onChange={(e) => setForm({ ...form, markupAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="25.00" disabled={submitting} />
+                {errors.markupAmount && <p className="mt-1 text-sm text-red-600">{errors.markupAmount}</p>}
+              </div>
+
+              {/* Platform - Always visible */}
+              {showPlatform && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ duration: 0.2 }}>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Globe size={18} /> Booking Platform</label>
+                  <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.platform ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} disabled={submitting}>
+                    {platforms.map((p) => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
+                  </select>
+                  {errors.platform && <p className="mt-1 text-sm text-red-600">{errors.platform}</p>}
+                </motion.div>
+              )}
 
               {/* Status */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                  <Clock size={18} />
-                  Status
-                </label>
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base"
-                  disabled={submitting}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Clock size={18} /> Status</label>
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" disabled={submitting}>
+                  <option value={STATUS.PENDING}>Pending</option>
+                  <option value={STATUS.CONFIRMED}>Confirmed</option>
+                  <option value={STATUS.CANCELLED}>Cancelled</option>
                 </select>
+              </div>
+
+              {/* ==== APPLIED SECTION ==== */}
+              <div className="mt-8 p-5 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl border border-indigo-200">
+                <h3 className="text-lg font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                  <CheckCircle size={20} /> Applied Summary
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Base Amount:</span>
+                    <span className="font-medium">₹{form.baseAmount || "0.00"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Commission:</span>
+                    <span className="font-medium">₹{form.commissionAmount || "0.00"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Markup:</span>
+                    <span className="font-medium">₹{form.markupAmount || "0.00"}</span>
+                  </div>
+                  <div className="flex justify-between sm:col-span-2 border-t border-indigo-200 pt-2">
+                    <span className="font-semibold text-indigo-700">Total Revenue:</span>
+                    <span className="font-bold text-indigo-800 text-lg">₹{totalRevenue}</span>
+                  </div>
+                  {form.platform && (
+                    <div className="flex justify-between sm:col-span-2">
+                      <span className="text-gray-600">Platform:</span>
+                      <span className="font-medium capitalize">{platforms.find(p => p.value === form.platform)?.label || "-"}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between sm:col-span-2">
+                    <span className="text-gray-600">Status:</span>
+                    <span className={`font-medium ${form.status === STATUS.CONFIRMED ? "text-emerald-700" : form.status === STATUS.CANCELLED ? "text-red-700" : "text-amber-700"}`}>
+                      {form.status.charAt(0).toUpperCase() + form.status.slice(1).toLowerCase()}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Buttons */}
               <div className="flex gap-4 pt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate("/bookings")}
-                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition font-medium"
-                  disabled={submitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition font-medium shadow-lg flex items-center justify-center gap-2 ${
-                    submitting ? "opacity-75 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {submitting ? (
-                    <>Adding...</>
-                  ) : (
-                    <>
-                      <Plus size={20} />
-                      Add Booking
-                    </>
-                  )}
+                <button type="button" onClick={() => navigate("/bookings")} className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition font-medium" disabled={submitting}>Cancel</button>
+                <button type="submit" disabled={submitting} className={`flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition font-medium shadow-lg flex items-center justify-center gap-2 ${submitting ? "opacity-75 cursor-not-allowed" : ""}`}>
+                  {submitting ? <>Adding...</> : <><Plus size={20} /> Add Booking</>}
                 </button>
               </div>
             </form>

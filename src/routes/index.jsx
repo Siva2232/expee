@@ -10,19 +10,25 @@ import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
 import AddBooking from "../pages/Bookings/AddBooking";
 import FundsDashboard from "../pages/FundsDashboard";
-import AddRevenue from "../pages/AddRevenue";
+import AddRevenue from "../pages/InvestmentPage";
 import LogExpense from "../pages/LogExpense";
 import ViewExpense from "../pages/ViewExpense";
+import CustomerDetails from "../pages/CustomerDetails";
+import ViewBooking from "../pages/ViewBooking";
+import Task from "../pages/Task";
+import Notification from "../pages/Notification";
 // Contexts
 import { BookingProvider } from "../context/BookingContext";
 import { FundsProvider } from "../context/FundsContext";
-import { ExpenseProvider } from "../context/ExpenseContext"; // ← NEW
+import { ExpenseProvider } from "../context/ExpenseContext";
+import { NotificationProvider } from "../context/NotificationContext";
 
 const AppRoutes = () => {
   return (
     <BookingProvider>
       <FundsProvider>
-        <ExpenseProvider> {/* ← Wrap everything that uses expenses */}
+        <ExpenseProvider>
+          <NotificationProvider>
           <Routes>
             {/* Auth */}
             <Route path="/signin" element={<SignIn />} />
@@ -35,13 +41,17 @@ const AppRoutes = () => {
             <Route path="/bookings" element={<AllBookings />} />
             <Route path="/bookings/track" element={<TrackBooking />} />
             <Route path="/bookings/add" element={<AddBooking />} />
+            <Route path="/customer-details" element={<CustomerDetails />} /> {/* Fixed */}
+            <Route path="/bookings/view/:id" element={<ViewBooking />} />
 
             {/* Funds + Expenses */}
-            <Route path="/funds/*" element={<FundsDashboard />} />
-            <Route path="/add-revenue/*" element={<AddRevenue />} /> {/* ← NEW */}
-            <Route path="/log-expense/*" element={<LogExpense />} /> {/* ← NEW */}
-           <Route path="/view/:id" element={<ViewExpense />} />
+            <Route path="/funds" element={<FundsDashboard />} />
+            <Route path="/add-revenue" element={<AddRevenue />} />
+            <Route path="/log-expense" element={<LogExpense />} />
+            <Route path="/view/:id" element={<ViewExpense />} />
 
+            <Route path="/tasks" element={<Task />} /> {/* <-- Added */}
+            <Route path="/notifications" element={<Notification />} /> {/* <-- Added */}
             {/* Reports & Settings */}
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
@@ -49,6 +59,7 @@ const AppRoutes = () => {
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </NotificationProvider>
         </ExpenseProvider>
       </FundsProvider>
     </BookingProvider>

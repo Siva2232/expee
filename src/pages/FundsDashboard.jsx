@@ -7,12 +7,23 @@ import { useExpense } from "../context/ExpenseContext";
 import {
   BarChart3, CalendarDays, CalendarRange, CalendarCheck, Receipt, TrendingUp, TrendingDown,
   DollarSign, AlertTriangle, Target, PieChart, Filter, Search, Clock, Repeat, Zap, Sun, Moon,
-  Activity, Goal, LineChart, Grid, Layers, Edit3, Upload, FileText, Users, Award,
+  Activity, Goal, LineChart as LineChartIcon, Grid, Layers, Edit3, Upload, FileText, Users, Award,
   Download, Trash2, Plus, Tag, ChevronDown, ChevronUp, Clock as ClockIcon, MapPin
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfYear, addDays, subDays, subWeeks, subMonths, subYears, isToday, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, eachHourOfInterval, parseISO } from "date-fns";
 import { saveAs } from "file-saver";
+
+// Recharts imports for Monthly trend chart
+import {
+  ResponsiveContainer,
+  LineChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Line,
+} from "recharts";
 
 const tabs = [
   { id: "daily", label: "Daily", icon: BarChart3 },
@@ -61,21 +72,20 @@ const FundsDashboard = () => {
 
     bookings.forEach(b => {
       const date = new Date(b.date);
-      const amt = Number(b.amount) || 0;
+      const revenue = Number(b.totalRevenue) || 0;
 
-      if (date >= dailyStart && date <= dailyEnd) daily += amt;
-      if (date >= weeklyStart && date <= weeklyEnd) weekly += amt;
-      if (date >= monthlyStart && date <= monthlyEnd) monthly += amt;
-      if (date >= yearlyStart && date <= yearlyEnd) yearly += amt;
+      if (date >= dailyStart && date <= dailyEnd) daily += revenue;
+      if (date >= weeklyStart && date <= weeklyEnd) weekly += revenue;
+      if (date >= monthlyStart && date <= monthlyEnd) monthly += revenue;
+      if (date >= yearlyStart && date <= yearlyEnd) yearly += revenue;
 
-      if (date >= prevDailyStart && date <= prevDailyEnd) prevDaily += amt;
-      if (date >= prevWeeklyStart && date <= prevWeeklyEnd) prevWeekly += amt;
-      if (date >= prevMonthlyStart && date <= prevMonthlyEnd) prevMonthly += amt;
-      if (date >= prevYearlyStart && date <= prevYearlyEnd) prevYearly += amt;
+      if (date >= prevDailyStart && date <= prevDailyEnd) prevDaily += revenue;
+      if (date >= prevWeeklyStart && date <= prevWeeklyEnd) prevWeekly += revenue;
+      if (date >= prevMonthlyStart && date <= prevMonthlyEnd) prevMonthly += revenue;
+      if (date >= prevYearlyStart && date <= prevYearlyEnd) prevYearly += revenue;
     });
 
-    // Simple forecast (average of last 3 periods * remaining time)
-    const forecastDaily = daily * 1.1; // Placeholder
+    const forecastDaily = daily * 1.1;
     const forecastWeekly = weekly * 1.05;
     const forecastMonthly = monthly * 1.08;
     const forecastYearly = yearly * 1.1;
@@ -116,7 +126,7 @@ const FundsDashboard = () => {
   const bookingStats = useMemo(() => {
     const total = revenueByPeriod.yearly;
     const avg = bookings.length ? Math.round(total / bookings.length) : 0;
-    const highest = bookings.reduce((max, b) => Math.max(max, Number(b.amount) || 0), 0);
+    const highest = bookings.reduce((max, b) => Math.max(max, Number(b.totalRevenue) || 0), 0);
     const todaysBookings = bookings.filter(b => isToday(new Date(b.date)));
     const avgBookingTime = bookings.length ? bookings.reduce((sum, b) => sum + (new Date(b.date).getHours() || 0), 0) / bookings.length : 0;
     return { total, avg, highest, count: bookings.length, todaysCount: todaysBookings.length, avgBookingTime };
@@ -131,7 +141,7 @@ const FundsDashboard = () => {
         const date = new Date(b.date);
         return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear() && date.getHours() === hour.getHours();
       });
-      return { hour: format(hour, 'HH:00'), revenue: hourBookings.reduce((sum, b) => sum + Number(b.amount), 0) };
+      return { hour: format(hour, 'HH:00'), revenue: hourBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0) };
     });
   }, [bookings]);
 
@@ -143,7 +153,9 @@ const FundsDashboard = () => {
         const date = new Date(b.date);
         return date.getDate() === day.getDate() && date.getMonth() === day.getMonth() && date.getFullYear() === day.getFullYear();
       });
-      return { day: format(day, 'EEE d'), revenue: dayBookings.reduce((sum, b) => sum + Number(b.amount), 0), profit: dayBookings.reduce((sum, b) => sum + Number(b.amount), 0) - getPeriodExpenses(startOfDay(day), endOfDay(day)) };
+      const dayRevenue = dayBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0);
+      const dayExpenses = getPeriodExpenses(startOfDay(day), endOfDay(day));
+      return { day: format(day, 'EEE d'), revenue: dayRevenue, profit: dayRevenue - dayExpenses };
     });
   }, [bookings, expenses]);
 
@@ -157,8 +169,9 @@ const FundsDashboard = () => {
         const date = new Date(b.date);
         return date >= monthStart && date <= monthEnd;
       });
+      const monthRevenue = monthBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0);
       const monthExpenses = getPeriodExpenses(monthStart, monthEnd);
-      return { month: format(month, 'MMM'), revenue: monthBookings.reduce((sum, b) => sum + Number(b.amount), 0), profit: monthBookings.reduce((sum, b) => sum + Number(b.amount), 0) - monthExpenses };
+      return { month: format(month, 'MMM'), revenue: monthRevenue, profit: monthRevenue - monthExpenses };
     });
   }, [bookings, expenses]);
 
@@ -177,7 +190,7 @@ const FundsDashboard = () => {
         const date = new Date(b.date);
         return date >= start && date <= end;
       })
-      .sort((a, b) => Number(b.amount) - Number(a.amount))
+      .sort((a, b) => Number(b.totalRevenue) - Number(a.totalRevenue))
       .slice(0, limit);
   };
 
@@ -224,10 +237,10 @@ const FundsDashboard = () => {
   };
 
   const exportCSV = () => {
-    const headers = "Type,Date,Description,Amount,Category,Tags\n";
+    const headers = "Type,Date,Description,Base Pay,Revenue,Amount,Category,Tags\n";
     const rows = [
-      ...bookings.map(b => `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName},${b.amount} ,,`),
-      ...expenses.map(e => `Expense,${format(new Date(e.date), "yyyy-MM-dd")},${e.description},${-e.amount},${e.category || "Other"},${e.tags?.join(',') || ''}`)
+      ...bookings.map(b => `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName},${b.basePay || 0},${b.totalRevenue || 0},,,`),
+      ...expenses.map(e => `Expense,${format(new Date(e.date), "yyyy-MM-dd")},${e.description},,,-${e.amount},${e.category || "Other"},${e.tags?.join(',') || ''}`)
     ];
     const csv = headers + rows.join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -269,7 +282,7 @@ const FundsDashboard = () => {
                     <span className="text-blue-100">Bookings</span>
                   </div>
                   <div className="text-blue-100">
-                    ₹{bookingStats.total.toLocaleString()} revenue • ₹{expenseTotal.toLocaleString()} spent • Avg time: {Math.round(bookingStats.avgBookingTime)}h
+                    Revenue: ₹{bookingStats.total.toLocaleString()} • Spent: ₹{expenseTotal.toLocaleString()} • Net Profit: ₹{(bookingStats.total - expenseTotal).toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -357,6 +370,7 @@ const FundsDashboard = () => {
                   profit={profit.monthly}
                   topBookings={getTopBookings(startOfMonth(new Date()), endOfMonth(new Date()))}
                   goal={goals.monthly}
+                  bookings={bookings} // Pass bookings for heatmap
                 />
               )}
               {activeTab === "yearly" && (
@@ -415,7 +429,7 @@ const FundsDashboard = () => {
   );
 };
 
-// === DAILY FUNDS - Timeline & Hourly Focus UI ===
+// === DAILY FUNDS ===
 const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hourlyData, topBookings, goal }) => (
   <div className="space-y-6 daily-bg rounded-3xl p-6">
     <div className="flex justify-between items-center">
@@ -427,7 +441,6 @@ const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hour
       </div>
     </div>
 
-    {/* Horizontal Timeline Stats */}
     <div className="overflow-x-auto pb-4">
       <div className="flex gap-4 min-w-max">
         {hourlyData.map((hour, i) => (
@@ -448,7 +461,6 @@ const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hour
       </div>
     </div>
 
-    {/* Compact Stats Row */}
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <StatCardCompact stat={{ label: "Today", value: revenue, prev: prevRevenue, icon: TrendingUp, color: "emerald" }} />
       <StatCardCompact stat={{ label: "Forecast", value: forecast, icon: Zap, color: "blue" }} />
@@ -458,47 +470,24 @@ const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hour
 
     <GoalProgress goal={goal} period="Daily" color="amber" />
 
-    {/* Quick Actions */}
     <div className="bg-white/70 backdrop-blur-sm p-4 rounded-2xl shadow-lg">
       <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
         <Plus className="text-amber-600" /> Quick Actions
       </h3>
       <div className="flex flex-wrap gap-2">
-
-       <div className="flex gap-3">
-  <a
-    href="/new-booking"
-    className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-sm hover:bg-amber-200 transition inline-block"
-  >
-    New Booking
-  </a>
-
-  <a
-    href="/add-revenue"
-    className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200 transition inline-block"
-  >
-    Add Revenue
-  </a>
-
-  <a
-    href="/log-expense"
-    className="px-3 py-1 bg-rose-100 text-rose-700 rounded-lg text-sm hover:bg-rose-200 transition inline-block"
-  >
-    Log Expense
-  </a>
-</div>
-
+        <a href="/new-booking" className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-sm hover:bg-amber-200 transition">New Booking</a>
+        <a href="/add-revenue" className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200 transition">Add Revenue</a>
+        <a href="/log-expense" className="px-3 py-1 bg-rose-100 text-rose-700 rounded-lg text-sm hover:bg-rose-200 transition">Log Expense</a>
       </div>
     </div>
 
-    {/* Top Bookings List */}
     <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
       <h3 className="font-semibold text-amber-800 mb-3">Peak Bookings</h3>
       <ul className="space-y-2">
         {topBookings.map((b, i) => (
           <li key={b.id} className="flex justify-between items-center p-2 bg-amber-50 rounded-lg">
             <span>{b.customerName} - {format(parseISO(b.date), 'HH:mm')}</span>
-            <span className="font-bold text-emerald-600">₹{Number(b.amount).toLocaleString()}</span>
+            <span className="font-bold text-emerald-600">₹{Number(b.totalRevenue).toLocaleString()}</span>
           </li>
         ))}
       </ul>
@@ -510,14 +499,13 @@ const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hour
   </div>
 );
 
-// === WEEKLY FUNDS - Calendar Grid UI ===
+// === WEEKLY FUNDS ===
 const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBookings, goal }) => (
   <div className="space-y-6 weekly-bg rounded-3xl p-6">
     <h2 className="text-2xl font-bold text-blue-800 flex items-center gap-3">
       <CalendarDays className="text-blue-600" /> Weekly Grid Overview
     </h2>
 
-    {/* 7-Day Grid */}
     <div className="grid grid-cols-7 gap-2">
       {dailyData.map((day, i) => (
         <motion.div
@@ -535,7 +523,6 @@ const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBoo
       ))}
     </div>
 
-    {/* Summary Cards in Row */}
     <div className="flex flex-col md:flex-row gap-4">
       <SummaryCard title="This Week" value={revenue} prev={prevRevenue} type="revenue" />
       <SummaryCard title="Forecast" value={forecast} type="forecast" />
@@ -544,7 +531,6 @@ const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBoo
 
     <GoalProgress goal={goal} period="Weekly" color="blue" />
 
-    {/* Weekly Insights */}
     <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
       <h3 className="font-semibold text-blue-800 mb-3">Insights</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -563,7 +549,6 @@ const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBoo
       </div>
     </div>
 
-    {/* Top Bookings as Cards */}
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
       {topBookings.slice(0, 3).map(b => (
         <BookingCard key={b.id} booking={b} />
@@ -572,70 +557,101 @@ const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBoo
   </div>
 );
 
-// === MONTHLY FUNDS - Heatmap & Trends UI ===
-const MonthlyFunds = ({ revenue, prevRevenue, forecast, profit, topBookings, goal }) => (
-  <div className="space-y-6 monthly-bg rounded-3xl p-6">
-    <h2 className="text-2xl font-bold text-green-800 flex items-center gap-3">
-      <CalendarRange className="text-green-600" /> Monthly Heatmap
-    </h2>
+// === MONTHLY FUNDS - FULLY FIXED ===
+const MonthlyFunds = ({ revenue, prevRevenue, forecast, profit, topBookings, goal, bookings }) => {
+  const monthlyDailyData = useMemo(() => {
+    const now = new Date();
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-    {/* Heatmap Placeholder - Days of Month */}
-    <div className="grid grid-cols-7 gap-1 h-48">
-      {Array.from({ length: 31 }, (_, i) => (
-        <div
-          key={i}
-          className={`aspect-square rounded ${i % 2 === 0 ? 'bg-emerald-400' : 'bg-gray-200'}`}
-          title={`Day ${i + 1}`}
-        />
-      ))}
-    </div>
+    return days.map(day => {
+      const dayBookings = bookings.filter(b => {
+        const d = new Date(b.date);
+        return d.getFullYear() === day.getFullYear() && d.getMonth() === day.getMonth() && d.getDate() === day.getDate();
+      });
+      const rev = dayBookings.reduce((s, b) => s + Number(b.totalRevenue), 0);
+      return { day: day.getDate(), revenue: rev };
+    });
+  }, [bookings]);
 
-    {/* Trend Line Chart Placeholder */}
-    <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
-      <div className="flex items-center gap-2 mb-3">
-        <LineChart className="text-green-600" />
-        <h3 className="font-semibold text-green-800">Revenue Trend</h3>
+  const maxRevenue = Math.max(...monthlyDailyData.map(d => d.revenue), 1);
+  const trendData = monthlyDailyData.map(d => ({ label: d.day, value: d.revenue }));
+
+  return (
+    <div className="space-y-6 monthly-bg rounded-3xl p-6">
+      <h2 className="text-2xl font-bold text-green-800 flex items-center gap-3">
+        <CalendarRange className="text-green-600" /> Monthly Heatmap
+      </h2>
+
+      {/* Heatmap */}
+      <div className="grid grid-cols-7 gap-1">
+        {monthlyDailyData.map(d => {
+          const intensity = d.revenue === 0 ? 0 : Math.round((d.revenue / maxRevenue) * 100);
+          const bg = intensity === 0 ? "bg-gray-200" : `bg-emerald-${Math.min(100 + intensity * 5, 900)}`;
+          return (
+            <div
+              key={d.day}
+              className={`aspect-square rounded flex items-center justify-center text-xs font-medium text-white ${bg}`}
+              title={`Day ${d.day}: ₹${d.revenue.toLocaleString()}`}
+            >
+              {d.day}
+            </div>
+          );
+        })}
       </div>
-      <div className="h-40 bg-gray-100 rounded flex items-center justify-center">
-        <LineChart size={40} className="text-gray-400" />
-        <span className="ml-2 text-gray-500">Trend Visualization</span>
+
+      {/* Trend Chart */}
+      <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <LineChartIcon className="text-green-600" />
+          <h3 className="font-semibold text-green-800">Revenue Trend</h3>
+        </div>
+        <div className="h-40">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip formatter={v => `₹${Number(v).toLocaleString()}`} contentStyle={{ background: "#fff", borderRadius: 8 }} />
+              <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={{ fill: "#10b981" }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <VerticalStat label="Revenue" value={revenue} prev={prevRevenue} />
+        <VerticalStat label="Forecast" value={forecast} />
+        <VerticalStat label="Profit" value={profit} color={profit >= 0 ? "green" : "red"} />
+      </div>
+
+      <GoalProgress goal={goal} period="Monthly" color="green" />
+
+      <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
+        <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+          <Users className="text-green-600" /> Top Customers
+        </h3>
+        <ul className="space-y-2">
+          {topBookings.map((b, i) => (
+            <li key={b.id} className="flex justify-between items-center p-2 bg-green-50 rounded">
+              <span className="font-medium">{b.customerName}</span>
+              <span className="text-green-600">₹{Number(b.totalRevenue).toLocaleString()}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
+  );
+};
 
-    {/* Vertical Stats */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <VerticalStat label="Revenue" value={revenue} prev={prevRevenue} />
-      <VerticalStat label="Forecast" value={forecast} />
-      <VerticalStat label="Profit" value={profit} color={profit >= 0 ? "green" : "red"} />
-    </div>
-
-    <GoalProgress goal={goal} period="Monthly" color="green" />
-
-    {/* Top Customers */}
-    <div className="bg-white/70 p-4 rounded-2xl shadow-lg">
-      <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
-        <Users className="text-green-600" /> Top Customers
-      </h3>
-      <ul className="space-y-2">
-        {topBookings.map((b, i) => (
-          <li key={b.id} className="flex justify-between items-center p-2 bg-green-50 rounded">
-            <span className="font-medium">{b.customerName}</span>
-            <span className="text-green-600">₹{Number(b.amount).toLocaleString()}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </div>
-);
-
-// === YEARLY FUNDS - Quarterly Layers UI ===
+// === YEARLY FUNDS ===
 const YearlyFunds = ({ revenue, prevRevenue, forecast, profit, monthlyData, topBookings, goal }) => (
   <div className="space-y-6 yearly-bg rounded-3xl p-6">
     <h2 className="text-2xl font-bold text-purple-800 flex items-center gap-3">
       <CalendarCheck className="text-purple-600" /> Yearly Layers
     </h2>
 
-    {/* Stacked Monthly Bars */}
     <div className="space-y-4">
       {monthlyData.map((month, i) => (
         <motion.div
@@ -655,7 +671,6 @@ const YearlyFunds = ({ revenue, prevRevenue, forecast, profit, monthlyData, topB
       ))}
     </div>
 
-    {/* Quarterly Summary Table */}
     <div className="bg-white/70 rounded-2xl shadow-lg overflow-hidden">
       <table className="w-full">
         <thead>
@@ -683,19 +698,13 @@ const YearlyFunds = ({ revenue, prevRevenue, forecast, profit, monthlyData, topB
 
     <GoalProgress goal={goal} period="Yearly" color="purple" />
 
-    {/* Achievement Badge */}
     {revenue > goal.target * 0.8 && (
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        className="bg-white/70 p-4 rounded-2xl shadow-lg text-center"
-      >
+      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="bg-white/70 p-4 rounded-2xl shadow-lg text-center">
         <Award className="w-8 h-8 text-purple-600 mx-auto mb-2" />
         <p className="text-purple-800 font-bold">80% Yearly Goal Achieved!</p>
       </motion.div>
     )}
 
-    {/* Top Bookings Grid */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {topBookings.slice(0, 4).map(b => (
         <div key={b.id} className="bg-white/70 p-3 rounded-xl shadow-md flex justify-between">
@@ -703,14 +712,14 @@ const YearlyFunds = ({ revenue, prevRevenue, forecast, profit, monthlyData, topB
             <p className="font-medium">{b.customerName}</p>
             <p className="text-sm text-gray-600">{format(new Date(b.date), 'MMM yyyy')}</p>
           </div>
-          <p className="text-purple-600 font-bold">₹{Number(b.amount).toLocaleString()}</p>
+          <p className="text-purple-600 font-bold">₹{Number(b.totalRevenue).toLocaleString()}</p>
         </div>
       ))}
     </div>
   </div>
 );
 
-// === EXPENSES - Advanced Form & Tags UI ===
+// === EXPENSE TRACKER ===
 const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddExpense, desc, setDesc, amount, setAmount, category, setCategory, selectedTags, setSelectedTags, expenseTotal, categoryTotals, showRecurring, setShowRecurring, editingExpense, handleEditExpense, exportCSV }) => (
   <div className="space-y-6 expenses-bg rounded-3xl p-6">
     <div className="flex justify-between items-center">
@@ -720,51 +729,20 @@ const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddE
       <div className="text-xl font-bold text-red-700">Total: ₹{expenseTotal.toLocaleString()}</div>
     </div>
 
-    {/* Multi-field Form with Tags and Edit Mode */}
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="bg-white/70 p-6 rounded-2xl shadow-lg border border-red-100"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/70 p-6 rounded-2xl shadow-lg border border-red-100">
       <form onSubmit={(e) => handleAddExpense(e, true)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <input
-            type="text"
-            placeholder="Description *"
-            value={desc}
-            onChange={e => setDesc(e.target.value)}
-            className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200"
-          />
-          <input
-            type="number"
-            placeholder="Amount *"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200"
-          />
-          <select
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200"
-          >
+          <input type="text" placeholder="Description *" value={desc} onChange={e => setDesc(e.target.value)} className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200" />
+          <input type="number" placeholder="Amount *" value={amount} onChange={e => setAmount(e.target.value)} className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200" />
+          <select value={category} onChange={e => setCategory(e.target.value)} className="p-3 rounded-xl border border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200">
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-        {/* Tags Selector */}
         <div>
           <label className="block text-sm font-medium text-red-700 mb-2">Tags</label>
           <div className="flex flex-wrap gap-2">
             {TAGS.map(tag => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
-                  selectedTags.includes(tag)
-                    ? 'bg-red-500 text-white'
-                    : 'bg-red-100 text-red-700 hover:bg-red-200'
-                }`}
-              >
+              <button key={tag} type="button" onClick={() => setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} className={`px-3 py-1 rounded-full text-xs font-medium transition ${selectedTags.includes(tag) ? 'bg-red-500 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
                 {tag}
               </button>
             ))}
@@ -774,34 +752,21 @@ const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddE
           <label className="flex items-center gap-2 text-sm text-red-600">
             <input type="checkbox" className="rounded text-red-500" /> Recurring
           </label>
-          <button
-            type="button"
-            onClick={() => setShowRecurring(!showRecurring)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-              showRecurring ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'
-            }`}
-          >
+          <button type="button" onClick={() => setShowRecurring(!showRecurring)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${showRecurring ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'}`}>
             <Repeat size={16} /> {showRecurring ? 'Show All' : 'Recurring'}
           </button>
-          <button
-            type="submit"
-            className="ml-auto flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 shadow-md"
-          >
+          <button type="submit" className="ml-auto flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 shadow-md">
             {editingExpense ? <Edit3 size={16} /> : <Plus size={16} />} {editingExpense ? 'Update' : 'Add'}
           </button>
         </div>
       </form>
       {editingExpense && (
-        <button
-          onClick={() => { setEditingExpense(null); setDesc(""); setAmount(""); setCategory(CATEGORIES[0]); setSelectedTags([]); }}
-          className="text-sm text-red-500 underline mt-2"
-        >
+        <button onClick={() => { setEditingExpense(null); setDesc(""); setAmount(""); setCategory(CATEGORIES[0]); setSelectedTags([]); }} className="text-sm text-red-500 underline mt-2">
           Cancel Edit
         </button>
       )}
     </motion.div>
 
-    {/* Filter Bar */}
     <div className="bg-white/70 p-4 rounded-xl shadow-sm flex items-center gap-4">
       <Search className="text-red-400" />
       <input placeholder="Search expenses..." className="flex-1 outline-none text-sm bg-transparent" />
@@ -811,7 +776,6 @@ const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddE
     </div>
 
     <div className="grid lg:grid-cols-2 gap-6">
-      {/* Enhanced Category Pie with Colors */}
       <div className="bg-white/70 p-6 rounded-2xl shadow-lg">
         <h3 className="text-lg font-semibold text-red-800 mb-4 flex items-center gap-2">
           <PieChart className="text-red-600" /> Breakdown
@@ -832,7 +796,6 @@ const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddE
         </ul>
       </div>
 
-      {/* Expenses List with Edit/Delete and Upload */}
       <div className="bg-white/70 p-6 rounded-2xl shadow-lg overflow-hidden">
         <h3 className="text-lg font-semibold text-red-800 mb-4">Transactions ({showRecurring ? recurringExpenses.length : expenses.length})</h3>
         <div className="max-h-72 overflow-y-auto space-y-2">
@@ -849,16 +812,9 @@ const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddE
               <div className="text-right">
                 <p className="font-bold text-red-600">-₹{e.amount.toLocaleString()}</p>
                 <div className="flex gap-1 mt-1">
-                  <button onClick={() => handleEditExpense(e)} className="p-1 text-blue-500 hover:bg-blue-100 rounded">
-                    <Edit3 size={14} />
-                  </button>
-                  <label className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-pointer">
-                    <Upload size={14} />
-                    <input type="file" className="hidden" />
-                  </label>
-                  <button onClick={() => removeExpense(e.id)} className="p-1 text-red-500 hover:bg-red-100 rounded">
-                    <Trash2 size={14} />
-                  </button>
+                  <button onClick={() => handleEditExpense(e)} className="p-1 text-blue-500 hover:bg-blue-100 rounded"><Edit3 size={14} /></button>
+                  <label className="p-1 text-gray-500 hover:bg-gray-100 rounded cursor-pointer"><Upload size={14} /><input type="file" className="hidden" /></label>
+                  <button onClick={() => removeExpense(e.id)} className="p-1 text-red-500 hover:bg-red-100 rounded"><Trash2 size={14} /></button>
                 </div>
               </div>
             </div>
@@ -867,7 +823,6 @@ const ExpenseTracker = ({ expenses, recurringExpenses, removeExpense, handleAddE
       </div>
     </div>
 
-    {/* Upcoming Recurring Alert */}
     {recurringExpenses.length > 0 && (
       <AlertCard message={`${recurringExpenses.length} recurring expenses due soon.`} color="red" />
     )}
@@ -882,7 +837,7 @@ const StatCardCompact = ({ stat }) => {
   return (
     <div className={`p-4 rounded-xl bg-white shadow-md flex flex-col items-center gap-2 text-${color}-600`}>
       <Icon size={20} />
-      <p className="text-2xl font-bold">{stat.value.toLocaleString()}</p>
+      <p className="text-2xl font-bold">₹{stat.value.toLocaleString()}</p>
       <p className="text-xs text-gray-500">{stat.label}</p>
       {stat.prev && <p className={`text-xs ${change >= 0 ? 'text-green-500' : 'text-red-500'}`}>{change.toFixed(1)}%</p>}
     </div>
@@ -895,7 +850,7 @@ const SummaryCard = ({ title, value, prev, type }) => (
     <p className={`text-2xl font-bold ${type === 'profit' ? (value >= 0 ? 'text-green-600' : 'text-red-600') : 'text-blue-600'}`}>
       ₹{value.toLocaleString()}
     </p>
-    {prev && <p className="text-xs text-gray-500">vs prev: {(value - prev).toLocaleString()}</p>}
+    {prev && <p className="text-xs text-gray-500">vs prev: ₹{(value - prev).toLocaleString()}</p>}
   </div>
 );
 
@@ -934,7 +889,7 @@ const BookingCard = ({ booking }) => (
   <div className="bg-white/70 p-4 rounded-xl shadow-md">
     <p className="font-medium text-gray-800">{booking.customerName}</p>
     <p className="text-sm text-gray-600">{format(new Date(booking.date), 'MMM d')}</p>
-    <p className="text-lg font-bold text-emerald-600 mt-2">₹{Number(booking.amount).toLocaleString()}</p>
+    <p className="text-lg font-bold text-emerald-600 mt-2">₹{Number(booking.totalRevenue).toLocaleString()}</p>
   </div>
 );
 

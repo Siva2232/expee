@@ -11,6 +11,7 @@ import {
   Loader2,
   PlusCircle,
   Receipt,
+  CheckCircle,
 } from "lucide-react";
 import Logo from "../assets/Logo.png";
 import { useAuth } from "../context/AuthContext";
@@ -24,10 +25,12 @@ const Sidebar = () => {
  const links = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "Bookings", path: "/bookings", icon: Book },
+  { name: "Customer Details", path: "/customer-details", icon: User },
   { name: "Funds", path: "/funds", icon: Wallet },
+  { name: "Tasks", path: "/tasks", icon: CheckCircle }, // Added here
 
   // NEW
-  { name: "Add Revenue", path: "/add-revenue", icon: PlusCircle },
+  { name: "Add Investments", path: "/add-revenue", icon: PlusCircle },
   { name: "Add Log Expense", path: "/log-expense", icon: Receipt },
 
   { name: "Reports", path: "/reports", icon: BarChart3 },
@@ -72,17 +75,16 @@ const Sidebar = () => {
     <aside className="flex h-full w-full flex-col bg-white">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg overflow-hidden">
-            <img
-              src={Logo}
-              alt="Compass Travel Logo"
-              className="h-8 w-8 object-contain"
-            />
-          </div>
-          <h1 className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent">
-            Compass Travel Panel
-          </h1>
+    <div className="flex items-center">
+
+    <div className="h-14 w-60 rounded-xl overflow-hidden shadow-md border border-gray-200 bg-white flex items-center justify-center">
+      <img
+        src={Logo}
+        alt="Company Logo"
+        className="h-3/4 object-contain"
+      />
+    </div>
+      
         </div>
       </div>
 

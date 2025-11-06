@@ -100,164 +100,165 @@
 //   return context;
 // };
 // src/context/BookingContext.jsx
+// src/context/BookingContext.jsx
+// src/context/BookingContext.jsx
+// src/context/BookingContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "react-hot-toast"; // npm install react-hot-toast
+import { toast } from "react-hot-toast";
 
-// === CONSTANTS ===
-const STATUS = {
-  PENDING: "pending",
-  CONFIRMED: "confirmed",
-};
-
-const CATEGORY = {
+export const CATEGORY = {
   FLIGHT: "flight",
   BUS: "bus",
   TRAIN: "train",
+  CAB: "cab",
+  HOTEL: "hotel",
 };
 
-// === CONTEXT ===
-export const BookingContext = createContext(undefined);
+export const STATUS = {
+  PENDING: "pending",
+  CONFIRMED: "confirmed",
+  CANCELLED: "cancelled",
+};
+
+const BookingContext = createContext(undefined);
 
 export const BookingProvider = ({ children }) => {
-  // 1. Load bookings from localStorage
   const [bookings, setBookings] = useState(() => {
-    const saved = localStorage.getItem("bookings");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
-        console.error("Failed to parse bookings from localStorage", e);
-        return [];
-      }
+    try {
+      const saved = localStorage.getItem("bookings");
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error("Failed to load bookings", e);
+      toast.error("Failed to load saved data");
+      return [];
     }
-    return [];
   });
 
-  // 2. Persist to localStorage on every change
   useEffect(() => {
     try {
       localStorage.setItem("bookings", JSON.stringify(bookings));
     } catch (e) {
-      console.error("Failed to save bookings to localStorage", e);
-      toast.error("Failed to save data");
+      console.error("Failed to save bookings", e);
     }
   }, [bookings]);
 
-  // 3. Add new booking with full validation
   const addBooking = (rawBooking) => {
     const {
       customerName,
       email,
+      contactNumber,
       date,
-      amount,
+      basePay = 0,
+      commissionAmount = 0,
+      markupAmount = 0,
+      platform = "",
       status = STATUS.PENDING,
       category = CATEGORY.FLIGHT,
     } = rawBooking;
 
-    // === VALIDATION ===
-    if (!customerName?.trim()) {
-      throw new Error("Customer name is required");
-    }
-    if (!email?.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (!customerName?.trim()) throw new Error("Customer name is required");
+    if (!email?.trim() || !/^\S+@\S+\.\S+$/.test(email))
       throw new Error("Valid email is required");
-    }
-    if (!date) {
-      throw new Error("Date is required");
-    }
-    if (!amount || amount <= 0) {
-      throw new Error("Amount must be greater than 0");
-    }
-    if (!Object.values(CATEGORY).includes(category)) {
+    if (!contactNumber?.trim()) throw new Error("Contact number is required");
+    if (!/^\d{10}$/.test(contactNumber.replace(/[\s-]/g, "")))
+      throw new Error("Contact number must be 10 digits");
+    if (!date) throw new Error("Date is required");
+
+    if (basePay < 0) throw new Error("Base pay cannot be negative");
+    if (commissionAmount < 0) throw new Error("Commission cannot be negative");
+    if (markupAmount < 0) throw new Error("Markup cannot be negative");
+
+    if (!Object.values(CATEGORY).includes(category))
       throw new Error("Invalid category");
-    }
-    if (!Object.values(STATUS).includes(status)) {
+    if (!Object.values(STATUS).includes(status))
       throw new Error("Invalid status");
-    }
+
+    if (["flight", "hotel", "cab"].includes(category) && !platform)
+      throw new Error("Platform is required");
+
+    const totalRevenue = Number(commissionAmount) + Number(markupAmount);
 
     const newBooking = {
-      id: uuidv4(),
+      id: `BK${Date.now()}${Math.floor(Math.random() * 1000)}`,
       customerName: customerName.trim(),
       email: email.trim().toLowerCase(),
-      date: new Date(date).toISOString(), // ISO string for consistency
-      amount: Number(amount),
+      contactNumber: contactNumber.trim(),
+      date,
+      basePay: Number(basePay),
+      commissionAmount: Number(commissionAmount),
+      markupAmount: Number(markupAmount),
+      totalRevenue: Number(totalRevenue.toFixed(2)),
+      platform,
       status,
       category,
       createdAt: new Date().toISOString(),
     };
 
     setBookings((prev) => [...prev, newBooking]);
-    toast.success("Booking added successfully");
+    toast.success("Booking added successfully!");
     return newBooking;
   };
 
-  // 4. Remove booking
   const removeBooking = (id) => {
     setBookings((prev) => prev.filter((b) => b.id !== id));
     toast.success("Booking removed");
   };
 
-  // 5. Update booking status with toast
   const updateBookingStatus = (id, newStatus) => {
-    if (!Object.values(STATUS).includes(newStatus)) {
+    if (!Object.values(STATUS).includes(newStatus))
       throw new Error("Invalid status");
-    }
 
     setBookings((prev) =>
-      prev.map((b) =>
-        b.id === id ? { ...b, status: newStatus } : b
-      )
+      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
     );
 
     const booking = bookings.find((b) => b.id === id);
-    const name = booking?.customerName || "Booking";
-
-    toast.success(
+    const name = booking?.customerName?.split(" ")[0] || "Booking";
+    const msg =
       newStatus === STATUS.CONFIRMED
-        ? `${name} confirmed`
-        : `${name} marked as pending`
-    );
+        ? `${name}'s booking confirmed`
+        : newStatus === STATUS.CANCELLED
+        ? `${name}'s booking cancelled`
+        : `${name}'s booking pending`;
+    toast.success(msg);
   };
 
-  // 6. Get booking by ID
   const getBookingById = (id) => bookings.find((b) => b.id === id);
 
-  // 7. Get stats (optional helper for dashboard)
   const getStats = () => {
     const total = bookings.length;
     const pending = bookings.filter((b) => b.status === STATUS.PENDING).length;
-    const confirmed = total - pending;
-    const revenue = bookings.reduce((sum, b) => sum + b.amount, 0);
+    const confirmed = bookings.filter((b) => b.status === STATUS.CONFIRMED).length;
+    const cancelled = total - pending - confirmed;
+    const revenue = bookings.reduce((sum, b) => sum + b.totalRevenue, 0);
+    const basePayTotal = bookings.reduce((sum, b) => sum + b.basePay, 0);
 
-    return { total, pending, confirmed, revenue };
-  };
-
-  // === CONTEXT VALUE ===
-  const value = {
-    bookings,
-    addBooking,
-    removeBooking,
-    updateBookingStatus,
-    getBookingById,
-    getStats,
-    isLoading: false, // set true if using API
-    STATUS,
-    CATEGORY,
+    return { total, pending, confirmed, cancelled, revenue, basePayTotal };
   };
 
   return (
-    <BookingContext.Provider value={value}>
+    <BookingContext.Provider
+      value={{
+        bookings,
+        addBooking,
+        removeBooking,
+        updateBookingStatus,
+        getBookingById,
+        getStats,
+        isLoading: false,
+        CATEGORY,
+        STATUS,
+      }}
+    >
       {children}
     </BookingContext.Provider>
   );
 };
 
-// === CUSTOM HOOK ===
 export const useBooking = () => {
   const context = useContext(BookingContext);
-  if (!context) {
-    throw new Error("useBooking must be used within a BookingProvider");
-  }
+  if (!context) throw new Error("useBooking must be used within BookingProvider");
   return context;
 };
