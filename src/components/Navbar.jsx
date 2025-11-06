@@ -56,7 +56,7 @@ const Navbar = () => {
               <Wallet size={16} className="text-indigo-600" />
               <div>
                 <p className="text-xs text-indigo-600 font-medium">Main Wallet</p>
-                <p className="text-sm font-bold text-gray-800">₹1,84,500</p>
+                <p className="text-sm font-bold text-gray-800">₹2000</p>
               </div>
             </motion.div>
 
@@ -67,7 +67,7 @@ const Navbar = () => {
               <Wallet size={16} className="text-emerald-600" />
               <div>
                 <p className="text-xs text-emerald-600 font-medium">Expense</p>
-                <p className="text-sm font-bold text-gray-800">₹42,300</p>
+                <p className="text-sm font-bold text-gray-800">₹1000</p>
               </div>
             </motion.div>
           </div>
