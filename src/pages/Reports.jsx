@@ -47,10 +47,11 @@ const Reports = () => {
   const { bookings = [] } = useBooking();
   const { expenses = [] } = useExpense();
 
-  // ────────────────────── DARK MODE (persisted + global) ──────────────────────
+  // ────────────────────── DARK MODE (default = LIGHT) ──────────────────────
   const [darkMode, setDarkMode] = useState(() => {
+    // **Default to false (light)**
     const saved = localStorage.getItem("reportsDarkMode");
-    return saved === "true";
+    return saved === "true";               // only true if user previously toggled ON
   });
 
   useEffect(() => {
@@ -236,7 +237,7 @@ const Reports = () => {
   // ────────────────────── RENDER ──────────────────────
   return (
     <DashboardLayout>
-      {/* ROOT – no forced bg, let Tailwind dark: handle it */}
+      {/* ROOT – default light, dark: utilities handle dark mode */}
       <div className="min-h-screen transition-colors duration-300 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white">
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
 
