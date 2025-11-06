@@ -1,5 +1,5 @@
 // src/context/NotificationContext.jsx
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 
 const NotificationContext = createContext();
 
@@ -16,21 +16,34 @@ export const NotificationProvider = ({ children }) => {
 
   // Load
   useEffect(() => {
-    const raw = localStorage.getItem(NOTIF_KEY);
-    if (raw) {
-      try { setNotifications(JSON.parse(raw)); }
-      catch (e) { console.error("Failed to load notifications", e); }
+    try {
+      const raw = localStorage.getItem(NOTIF_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setNotifications(parsed);
+        } else {
+          setNotifications([]);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load notifications", e);
+      setNotifications([]);
     }
   }, []);
 
   // Save
   useEffect(() => {
-    localStorage.setItem(NOTIF_KEY, JSON.stringify(notifications));
+    try {
+      localStorage.setItem(NOTIF_KEY, JSON.stringify(notifications));
+    } catch (e) {
+      console.error("Failed to save notifications", e);
+    }
   }, [notifications]);
 
-  const addNotification = (msg) => {
+  const addNotification = (message, type = "info") => {
     const id = Date.now();
-    const n = { id, message: msg, timestamp: new Date(), read: false };
+    const n = { id, message, type, timestamp: new Date(), read: false };
     setNotifications(p => [n, ...p]);
   };
 
@@ -40,7 +53,10 @@ export const NotificationProvider = ({ children }) => {
 
   const clearAll = () => setNotifications([]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = useMemo(
+    () => notifications.filter(n => !n.read).length,
+    [notifications]
+  );
 
   return (
     <NotificationContext.Provider value={{

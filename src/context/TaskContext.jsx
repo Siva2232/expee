@@ -19,13 +19,29 @@ export const TaskProvider = ({ children }) => {
 
   // ── Load from localStorage on mount ─────────────────────────────────────
   useEffect(() => {
-    const raw = localStorage.getItem(TASK_KEY);
-    if (raw) setTasks(JSON.parse(raw));
+    try {
+      const raw = localStorage.getItem(TASK_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setTasks(parsed);
+        } else {
+          setTasks([]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load tasks from localStorage:", error);
+      setTasks([]);
+    }
   }, []);
 
   // ── Persist every change ───────────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
+    try {
+      localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
+    } catch (error) {
+      console.error("Failed to save tasks to localStorage:", error);
+    }
   }, [tasks]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────

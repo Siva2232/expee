@@ -1,5 +1,5 @@
 // src/pages/Task.jsx   (updated – now uses TaskContext)
-import { useState, useRef, useCallback,useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -44,11 +44,13 @@ const Task = () => {
   const { addNotification } = useNotifications();
   const { tasks, addTask, toggleTask, updateTask } = useTaskContext();
 
-  // ── Due-date notifications (runs every minute) ───────────────────────
+  // ── Due-date notifications (deduped) ─────────────────────────────────
+  const notifiedRef = useRef(new Set());
   const checkDueDates = useCallback(() => {
     const now = new Date();
+    const notified = notifiedRef.current;
     tasks.forEach((task) => {
-      if (task.completed || !task.dueDate) return;
+      if (task.completed || !task.dueDate || notified.has(task.id)) return;
 
       const due = new Date(task.dueDate);
       const diff = due.getTime() - now.getTime();
@@ -56,8 +58,10 @@ const Task = () => {
 
       if (days === 0 && diff > 0) {
         addNotification(`Due today: "${task.title}"`, "warning");
+        notified.add(task.id);
       } else if (days === 1) {
         addNotification(`Due tomorrow: "${task.title}"`, "info");
+        notified.add(task.id);
       }
     });
   }, [tasks, addNotification]);
@@ -141,15 +145,28 @@ const Task = () => {
   };
 
   // ── Stats ─────────────────────────────────────────────────────────────
-  const pending = tasks.filter((t) => !t.completed);
-  const done = tasks.filter((t) => t.completed);
-  const total = tasks.length;
-  const completionRate = total > 0 ? Math.round((done.length / total) * 100) : 0;
+  const { pending, done, total, completionRate } = useMemo(() => {
+    const pending = tasks.filter((t) => !t.completed);
+    const done = tasks.filter((t) => t.completed);
+    const total = tasks.length;
+    const completionRate = total > 0 ? Math.round((done.length / total) * 100) : 0;
+    return { pending, done, total, completionRate };
+  }, [tasks]);
 
-  // ── TaskCard (unchanged UI, just uses context) ───────────────────────
-  const TaskCard = ({ task, index }) => {
+  // ── TaskCard (memoized) ──────────────────────────────────────────────
+  const TaskCard = memo(({ task, index }) => {
     const isEditing = editingId === task.id;
     const { icon: PriorityIcon, color, label } = PRIORITY_CONFIG[task.priority];
+
+    // Focus on title when editing starts
+    useEffect(() => {
+      if (isEditing) {
+        const refs = editRefs.current[task.id];
+        if (refs?.title) {
+          refs.title.focus();
+        }
+      }
+    }, [isEditing, task.id]);
 
     return (
       <motion.div
@@ -219,19 +236,27 @@ const Task = () => {
             {isEditing ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                 <input
-                  ref={(el) => (editRefs.current[task.id] = { ...editRefs.current[task.id], title: el })}
+                  ref={(el) => {
+                    if (!editRefs.current[task.id]) editRefs.current[task.id] = {};
+                    editRefs.current[task.id] = { ...editRefs.current[task.id], title: el };
+                  }}
                   defaultValue={task.title}
                   className="col-span-2 px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 font-medium"
-                  autoFocus
                 />
                 <input
-                  ref={(el) => (editRefs.current[task.id] = { ...editRefs.current[task.id], due: el })}
+                  ref={(el) => {
+                    if (!editRefs.current[task.id]) editRefs.current[task.id] = {};
+                    editRefs.current[task.id] = { ...editRefs.current[task.id], due: el };
+                  }}
                   type="date"
                   defaultValue={task.dueDate}
                   className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200"
                 />
                 <select
-                  ref={(el) => (editRefs.current[task.id] = { ...editRefs.current[task.id], assignee: el })}
+                  ref={(el) => {
+                    if (!editRefs.current[task.id]) editRefs.current[task.id] = {};
+                    editRefs.current[task.id] = { ...editRefs.current[task.id], assignee: el };
+                  }}
                   defaultValue={task.assigneeId}
                   className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 appearance-none"
                 >
@@ -243,7 +268,10 @@ const Task = () => {
                   ))}
                 </select>
                 <select
-                  ref={(el) => (editRefs.current[task.id] = { ...editRefs.current[task.id], priority: el })}
+                  ref={(el) => {
+                    if (!editRefs.current[task.id]) editRefs.current[task.id] = {};
+                    editRefs.current[task.id] = { ...editRefs.current[task.id], priority: el };
+                  }}
                   defaultValue={task.priority}
                   className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200"
                 >
@@ -312,7 +340,7 @@ const Task = () => {
         </div>
       </motion.div>
     );
-  };
+  });
 
   // ── Render ───────────────────────────────────────────────────────────
   return (
