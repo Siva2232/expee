@@ -1,21 +1,26 @@
 // src/pages/Task.jsx
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, Calendar, User, CheckCircle, Clock,
-  Edit2, Save, X,
+  Plus, Calendar, User, CheckCircle, Clock, Sparkles,
+  Edit3, Save, X, AlertCircle, TrendingUp,
 } from "lucide-react";
 import { useNotifications } from "../context/NotificationContext";
 import DashboardLayout from "../components/DashboardLayout";
 
-const TASK_KEY = "crm-compass-tasks-v2";
+const TASK_KEY = "crm-compass-tasks-v3";
 
 const TEAM = [
-  { id: "u1", name: "AntonyJoseph", avatar: "A" },
-  { id: "u2", name: "HariKrishnan", avatar: "H" },
-  { id: "u3", name: "AkshayKumar", avatar: "A" },
-//   { id: "u4", name: "Diana", avatar: "D" },
+  { id: "u1", name: "AntonyJoseph", avatar: "A", color: "from-rose-400 to-pink-500" },
+  { id: "u2", name: "HariKrishnan", avatar: "H", color: "from-emerald-400 to-teal-500" },
+  { id: "u3", name: "AkshayKumar", avatar: "A", color: "from-indigo-400 to-purple-500" },
 ];
+
+const PRIORITY_CONFIG = {
+  high: { label: "High", color: "from-red-500 to-rose-600", icon: AlertCircle },
+  medium: { label: "Medium", color: "from-amber-500 to-orange-600", icon: Clock },
+  low: { label: "Low", color: "from-emerald-500 to-teal-600", icon: CheckCircle },
+};
 
 const Task = () => {
   const [tasks, setTasks] = useState([]);
@@ -27,30 +32,27 @@ const Task = () => {
   const { addNotification } = useNotifications();
   const editRefs = useRef({});
 
-  // Load tasks
+  // Load & Save
   useEffect(() => {
     const raw = localStorage.getItem(TASK_KEY);
-    if (raw) {
-      try { setTasks(JSON.parse(raw)); }
-      catch (e) { console.error("Failed to load tasks", e); }
-    }
+    if (raw) setTasks(JSON.parse(raw));
   }, []);
 
-  // Save tasks
   useEffect(() => {
     localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
   }, [tasks]);
 
-  // Due-date alerts
+  // Due alerts
   useEffect(() => {
     const check = () => {
       const now = new Date();
       tasks.forEach(t => {
         if (t.completed || !t.dueDate) return;
         const due = new Date(t.dueDate);
-        const days = Math.floor((due - now) / (1000 * 60 * 60 * 24));
-        if (days === 0) addNotification(`Due today: "${t.title}"`);
-        else if (days === 1) addNotification(`Due tomorrow: "${t.title}"`);
+        const diff = due - now;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        if (days === 0 && diff > 0) addNotification(`Due today: "${t.title}"`, "warning");
+        else if (days === 1) addNotification(`Due tomorrow: "${t.title}"`, "info");
       });
     };
     check();
@@ -58,118 +60,210 @@ const Task = () => {
     return () => clearInterval(id);
   }, [tasks, addNotification]);
 
-  // Add
+  // Add Task
   const handleAdd = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    const ass = TEAM.find(m => m.id === assigneeId) || null;
-    const nt = {
+    const member = TEAM.find(m => m.id === assigneeId) || null;
+    const newTask = {
       id: Date.now(),
-      title,
+      title: title.trim(),
       dueDate,
-      assigneeId: ass?.id || "",
-      assigneeName: ass?.name || "",
-      assigneeAvatar: ass?.avatar || "",
+      assigneeId: member?.id || "",
+      assigneeName: member?.name || "",
+      assigneeAvatar: member?.avatar || "",
+      assigneeColor: member?.color || "",
       priority,
       completed: false,
       createdAt: new Date().toISOString(),
     };
-    setTasks(p => [nt, ...p]);
-    addNotification(`Task assigned to ${ass?.name || "—"}: "${title}"`);
+    setTasks(p => [newTask, ...p]);
+    addNotification(`Task created: "${title}" → ${member?.name || "Unassigned"}`, "success");
     setTitle(""); setDueDate(""); setAssigneeId(""); setPriority("medium");
   };
 
-  // Toggle complete
+  // Toggle Complete
   const toggle = (id) => {
-    setTasks(p => {
-      const t = p.find(x => x.id === id);
-      const upd = p.map(x => x.id === id ? { ...x, completed: !x.completed } : x);
-      addNotification(`Task "${t.title}" ${t.completed ? "reopened" : "completed"}`);
-      return upd;
-    });
+    setTasks(p => p.map(t => {
+      if (t.id === id) {
+        const action = t.completed ? "reopened" : "completed";
+        addNotification(`Task "${t.title}" ${action}`, action === "completed" ? "success" : "info");
+        return { ...t, completed: !t.completed };
+      }
+      return t;
+    }));
   };
 
-  // Edit
+  // Edit Mode
   const startEdit = id => setEditingId(id);
   const cancelEdit = () => setEditingId(null);
   const saveEdit = (id) => {
-    const r = editRefs.current[id];
-    if (!r) return;
-    const old = tasks.find(x => x.id === id);
-    const ass = TEAM.find(m => m.id === r.assignee.value) || null;
-    const upd = {
+    const refs = editRefs.current[id];
+    if (!refs) return;
+    const old = tasks.find(t => t.id === id);
+    const member = TEAM.find(m => m.id === refs.assignee.value) || null;
+    const updated = {
       ...old,
-      title: r.title.value.trim() || old.title,
-      dueDate: r.due.value || old.dueDate,
-      assigneeId: ass?.id || "",
-      assigneeName: ass?.name || "",
-      assigneeAvatar: ass?.avatar || "",
-      priority: r.priority.value || old.priority,
+      title: refs.title.value.trim() || old.title,
+      dueDate: refs.due.value || old.dueDate,
+      assigneeId: member?.id || "",
+      assigneeName: member?.name || "",
+      assigneeAvatar: member?.avatar || "",
+      assigneeColor: member?.color || "",
+      priority: refs.priority.value,
     };
-    setTasks(p => p.map(x => x.id === id ? upd : x));
-    addNotification(`Task updated: "${upd.title}"`);
+    setTasks(p => p.map(t => t.id === id ? updated : t));
+    addNotification(`Task updated: "${updated.title}"`, "info");
     setEditingId(null);
   };
 
   const pending = tasks.filter(t => !t.completed);
   const done = tasks.filter(t => t.completed);
+  const total = tasks.length;
+  const completionRate = total > 0 ? Math.round((done.length / total) * 100) : 0;
 
-  const Card = ({ task }) => {
-    const editing = editingId === task.id;
+  const TaskCard = ({ task, index }) => {
+    const isEditing = editingId === task.id;
+    const priorityCfg = PRIORITY_CONFIG[task.priority];
+    const PriorityIcon = priorityCfg.icon;
+
     return (
       <motion.div
         layout
-        initial={{ opacity: 0, scale: .9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={`p-4 rounded-xl border backdrop-blur-sm transition-all group ${
-          task.completed ? "bg-gray-50/70 border-gray-200" : "bg-white/80 border-gray-200 hover:shadow-md"
-        }`}
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        transition={{ delay: index * 0.05 }}
+        className="group relative"
       >
-        <div className="flex items-center justify-between gap-3">
-          <button onClick={() => toggle(task.id)}
-            className={`p-1 rounded-full transition ${task.completed ? "bg-emerald-500 text-white" : "border-2 border-gray-300 hover:border-emerald-500"}`}>
-            <CheckCircle size={18} />
-          </button>
-
-          {editing ? (
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2">
-              <input ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], title: el }} defaultValue={task.title} className="px-2 py-1 border rounded-lg focus:border-indigo-500 outline-none" autoFocus />
-              <input ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], due: el }} type="date" defaultValue={task.dueDate} className="px-2 py-1 border rounded-lg focus:border-indigo-500 outline-none" />
-              <select ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], assignee: el }} defaultValue={task.assigneeId} className="px-2 py-1 border rounded-lg focus:border-indigo-500 outline-none">
-                <option value="">—</option>
-                {TEAM.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-              <select ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], priority: el }} defaultValue={task.priority} className="px-2 py-1 border rounded-lg focus:border-indigo-500 outline-none">
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          ) : (
-            <div className="flex-1">
-              <h3 className={`font-medium ${task.completed ? "line-through text-gray-500" : "text-gray-800"}`}>{task.title}</h3>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
-                {task.dueDate && <span className="flex items-center gap-1"><Calendar size={13} />{new Date(task.dueDate).toLocaleDateString()}</span>}
-                {task.assigneeName && <span className="flex items-center gap-1">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">{task.assigneeAvatar}</div>
-                  {task.assigneeName}
-                </span>}
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${task.priority === "high" ? "bg-red-100 text-red-700" : task.priority === "medium" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
-                  {task.priority}
-                </span>
-                {task.completed && <span className="text-emerald-600 font-medium">Completed</span>}
+        <div className={`
+          relative overflow-hidden rounded-3xl p-6 transition-all duration-500
+          ${task.completed 
+            ? "bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200/50" 
+            : "bg-white/90 backdrop-blur-2xl border border-white/40 shadow-xl hover:shadow-2xl hover:-translate-y-1"
+          }
+        `}>
+          {/* Floating Edit Button */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            whileHover={{ scale: 1.1 }}
+            className="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {isEditing ? (
+              <div className="flex gap-2 bg-white/80 backdrop-blur-xl rounded-2xl p-2 shadow-lg">
+                <button onClick={() => saveEdit(task.id)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition">
+                  <Save size={18} />
+                </button>
+                <button onClick={cancelEdit} className="p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition">
+                  <X size={18} />
+                </button>
               </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-1">
-            {editing ? (
-              <>
-                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: .9 }} onClick={() => saveEdit(task.id)} className="p-1 text-emerald-600"><Save size={16} /></motion.button>
-                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: .9 }} onClick={cancelEdit} className="p-1 text-gray-600"><X size={16} /></motion.button>
-              </>
             ) : (
-              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: .9 }} onClick={() => startEdit(task.id)} className="p-1 text-indigo-600 opacity-0 group-hover:opacity-100 transition"><Edit2 size={16} /></motion.button>
+              <button
+                onClick={() => startEdit(task.id)}
+                className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition"
+              >
+                <Edit3 size={18} />
+              </button>
+            )}
+          </motion.div>
+
+          {/* Checkbox */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => toggle(task.id)}
+            className={`
+              absolute top-6 left-6 w-8 h-8 rounded-full flex items-center justify-center transition-all
+              ${task.completed 
+                ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg" 
+                : "border-2 border-gray-300 hover:border-emerald-500 hover:bg-emerald-50"
+              }
+            `}
+          >
+            {task.completed && <CheckCircle size={18} />}
+          </motion.button>
+
+          {/* Content */}
+          <div className="pl-16 pr-16">
+            {isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                <input
+                  ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], title: el }}
+                  defaultValue={task.title}
+                  className="col-span-2 px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 font-medium"
+                  autoFocus
+                />
+                <input
+                  ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], due: el }}
+                  type="date"
+                  defaultValue={task.dueDate}
+                  className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200"
+                />
+                <select
+                  ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], assignee: el }}
+                  defaultValue={task.assigneeId}
+                  className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 appearance-none"
+                >
+                  <option value="">Unassigned</option>
+                  {TEAM.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <select
+                  ref={el => editRefs.current[task.id] = { ...editRefs.current[task.id], priority: el }}
+                  defaultValue={task.priority}
+                  className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200"
+                >
+                  {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                <h3 className={`
+                  text-xl font-bold mb-3 transition-all
+                  ${task.completed ? "line-through text-gray-500" : "text-gray-900"}
+                `}>
+                  {task.title}
+                </h3>
+
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {task.dueDate && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-full">
+                      <Calendar size={14} className="text-indigo-600" />
+                      <span className="font-medium text-indigo-700">
+                        {new Date(task.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </span>
+                    </div>
+                  )}
+
+                  {task.assigneeName && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-pink-50 to-rose-50 rounded-full">
+                      <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${task.assigneeColor} flex items-center justify-center text-white text-xs font-bold`}>
+                        {task.assigneeAvatar}
+                      </div>
+                      <span className="font-medium text-rose-700">{task.assigneeName}</span>
+                    </div>
+                  )}
+
+                  <div className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-full font-medium text-white
+                    bg-gradient-to-r ${priorityCfg.color}
+                  `}>
+                    <PriorityIcon size={14} />
+                    {priorityCfg.label}
+                  </div>
+
+                  {task.completed && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full font-medium">
+                      <CheckCircle size={14} />
+                      Done
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -179,84 +273,212 @@ const Task = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 p-6 md:p-8">
+        <div className="max-w-7xl mx-auto">
 
-        {/* Add Form */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-6 border border-gray-200/50 mb-8">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-6">Create New Task</h1>
-          <form onSubmit={handleAdd} className="space-y-4">
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter task title..." className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition" />
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10"
+          >
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl shadow-2xl">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Task Compass
+              </h1>
             </div>
+            <p className="text-lg text-gray-600 ml-16">Navigate your team's success with clarity</p>
+          </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                <div className="relative">
-                  <Calendar size={18} className="absolute left-3 top-3 text-gray-400" />
-                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none" />
+          {/* Stats */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10"
+          >
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/40">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Tasks</p>
+                  <p className="text-3xl font-bold text-gray-900">{total}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl">
+                  <TrendingUp className="w-6 h-6 text-indigo-600" />
                 </div>
               </div>
+            </div>
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/40">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-3xl font-bold text-amber-600">{pending.length}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl">
+                  <Clock className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/40">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Completion</p>
+                  <p className="text-3xl font-bold text-emerald-600">{completionRate}%</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl">
+                  <CheckCircle className="w-6 h-6 text-emerald-600" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
+          {/* Add Task Form */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-white/50 mb-12"
+          >
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <Plus className="w-7 h-7 text-indigo-600" />
+              Create New Task
+            </h2>
+            <form onSubmit={handleAdd} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assignee</label>
-                <div className="relative">
-                  <User size={18} className="absolute left-3 top-3 text-gray-400" />
-                  <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none appearance-none">
-                    <option value="">—</option>
-                    {TEAM.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Task Title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="What's the mission?"
+                  className="w-full px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all font-medium text-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Due Date</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-600" />
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={e => setDueDate(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Assign To</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-600" />
+                    <select
+                      value={assigneeId}
+                      onChange={e => setAssigneeId(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all appearance-none"
+                    >
+                      <option value="">Unassigned</option>
+                      {TEAM.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Priority</label>
+                  <select
+                    value={priority}
+                    onChange={e => setPriority(e.target.value)}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all"
+                  >
+                    {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
+                      <option key={k} value={k}>{v.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none">
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-            </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="w-full py-5 bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-600 text-white font-bold text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3"
+              >
+                <Plus className="w-6 h-6" />
+                Launch Task
+              </motion.button>
+            </form>
+          </motion.div>
 
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: .98 }} type="submit"
-              className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-2">
-              <Plus size={20} /> Add Task
-            </motion.button>
-          </form>
-        </motion.div>
+          {/* Task Sections */}
+          <div className="space-y-12">
+            <section>
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-3 mb-6"
+              >
+                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg">
+                  <Clock className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Pending Missions</h2>
+                <span className="ml-2 px-4 py-1.5 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 rounded-full text-sm font-bold">
+                  {pending.length}
+                </span>
+              </motion.div>
+              <AnimatePresence>
+                {pending.length === 0 ? (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-16 text-gray-500 bg-white/50 backdrop-blur-xl rounded-3xl"
+                  >
+                    All clear! Add a task to get started.
+                  </motion.p>
+                ) : (
+                  <div className="grid gap-5">
+                    {pending.map((t, i) => <TaskCard key={t.id} task={t} index={i} />)}
+                  </div>
+                )}
+              </AnimatePresence>
+            </section>
 
-        {/* Sections */}
-        <div className="space-y-8">
-
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Clock size={22} className="text-amber-600" />
-              <h2 className="text-xl font-bold text-gray-800">Pending Tasks</h2>
-              <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">{pending.length}</span>
-            </div>
-            <div className="space-y-3">
-              {pending.length === 0 ? (
-                <p className="text-center text-gray-500 py-6 bg-gray-50/50 rounded-xl">No pending tasks. Add one above!</p>
-              ) : pending.map(t => <Card key={t.id} task={t} />)}
-            </div>
-          </section>
-
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle size={22} className="text-emerald-600" />
-              <h2 className="text-xl font-bold text-gray-800">Completed Tasks</h2>
-              <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">{done.length}</span>
-            </div>
-            <div className="space-y-3">
-              {done.length === 0 ? (
-                <p className="text-center text-gray-500 py-6 bg-gray-50/50 rounded-xl">No completed tasks yet.</p>
-              ) : done.map(t => <Card key={t.id} task={t} />)}
-            </div>
-          </section>
-
+            <section>
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-3 mb-6"
+              >
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
+                  <CheckCircle className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Completed Victories</h2>
+                <span className="ml-2 px-4 py-1.5 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 rounded-full text-sm font-bold">
+                  {done.length}
+                </span>
+              </motion.div>
+              <AnimatePresence>
+                {done.length === 0 ? (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-16 text-gray-500 bg-white/50 backdrop-blur-xl rounded-3xl"
+                  >
+                    No victories yet. Complete a task!
+                  </motion.p>
+                ) : (
+                  <div className="grid gap-5">
+                    {done.map((t, i) => <TaskCard key={t.id} task={t} index={i} />)}
+                  </div>
+                )}
+              </AnimatePresence>
+            </section>
+          </div>
         </div>
       </div>
     </DashboardLayout>
