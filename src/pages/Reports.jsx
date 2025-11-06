@@ -1,5 +1,5 @@
 // src/pages/Reports.jsx
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   format,
   startOfMonth,
@@ -21,9 +21,9 @@ import { useExpense } from "../context/ExpenseContext";
 import DashboardLayout from "../components/DashboardLayout";
 
 import {
-  Download, TrendingUp, Users, DollarSign,
-  ShoppingCart, BarChart3, PieChart, Activity, Target,
-  ArrowUpRight, ArrowDownRight, IndianRupee,
+  Download, Calendar, TrendingUp, TrendingDown, Users, DollarSign,
+  FileText, Filter, BarChart3, PieChart, Activity, Target,
+  ArrowUpRight, ArrowDownRight, IndianRupee, ShoppingCart,
   FileDown, Gauge, Sparkles,
   Fuel, Briefcase,
   Moon, Sun,
@@ -51,40 +51,9 @@ const Reports = () => {
   const [customStart, setCustomStart] = useState(null);
   const [customEnd, setCustomEnd] = useState(null);
   const [reportTab, setReportTab] = useState("overview");
-
-  // Dark mode: load from localStorage or system preference
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const saved = localStorage.getItem("theme");
-    if (saved !== null) return saved === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const [darkMode, setDarkMode] = useState(false);
 
   const reportRef = useRef(null);
-
-  // Sync dark mode with <html class="dark">
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  // Follow system changes only if no saved preference
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e) => {
-      if (localStorage.getItem("theme") === null) {
-        setDarkMode(e.matches);
-      }
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
 
   /* ────────────────────── DATE RANGE ────────────────────── */
   const { start, end } = useMemo(() => {
@@ -225,7 +194,7 @@ const Reports = () => {
     }
   };
 
-  /* ────────────────────── PERFORMANCE METRICS ────────────────────── */
+  /* ────────────────────── PERFORMANCE METRICS (real) ────────────────────── */
   const performanceMetrics = useMemo(() => {
     const totalDistance = filteredBookings.reduce((s, b) => s + (Number(b.distance) || 0), 0);
     const totalFuel = filteredExpenses
@@ -234,8 +203,9 @@ const Reports = () => {
     const fuelEfficiency = totalDistance && totalFuel ? (totalDistance / totalFuel).toFixed(1) : "0";
 
     const driverEarnings = filteredBookings.reduce((s, b) => s + (Number(b.driverPay) || 0), 0);
-    const months = dateRange === "thisMonth" || dateRange === "lastMonth" ? 1 : 3;
-    const avgDriverMonth = driverEarnings ? (driverEarnings / months).toFixed(0) : "0";
+    const avgDriverMonth = driverEarnings
+      ? (driverEarnings / (dateRange === "thisMonth" ? 1 : dateRange === "lastMonth" ? 1 : 3)).toFixed(0)
+      : "0";
 
     return [
       { label: "Booking Conversion", value: `${bookingCount ? ((bookingCount / (bookingCount + 5)) * 100).toFixed(1) : 0}%`, change: "", icon: BarChart3 },
@@ -247,11 +217,7 @@ const Reports = () => {
   /* ────────────────────── RENDER ────────────────────── */
   return (
     <DashboardLayout>
-      <div
-        className={`min-h-screen transition-colors duration-300 ${
-          darkMode ? "bg-gray-900 text-white" : "bg-gradient-to-br from-slate-50 via-white to-indigo-50"
-        }`}
-      >
+      <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-900 text-white" : "bg-gradient-to-br from-slate-50 via-white to-indigo-50"}`}>
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
 
           {/* HEADER */}
@@ -259,9 +225,7 @@ const Reports = () => {
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             className={`relative overflow-hidden rounded-3xl p-8 shadow-2xl text-white ${
-              darkMode
-                ? "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900"
-                : "bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
+              darkMode ? "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900" : "bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"
             }`}
           >
             <div className="absolute inset-0 opacity-20">
@@ -291,22 +255,13 @@ const Reports = () => {
               </div>
 
               <div className="flex gap-3">
-                <button
-                  onClick={exportCSV}
-                  className="flex items-center gap-2 px-5 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition"
-                >
+                <button onClick={exportCSV} className="flex items-center gap-2 px-5 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition">
                   <Download size={18} /> CSV
                 </button>
-                <button
-                  onClick={exportPDF}
-                  className="flex items-center gap-2 px-5 py-3 bg-white text-indigo-600 font-semibold rounded-xl shadow-md hover:shadow-lg transition"
-                >
+                <button onClick={exportPDF} className="flex items-center gap-2 px-5 py-3 bg-white text-indigo-600 font-semibold rounded-xl shadow-md hover:shadow-lg transition">
                   <FileDown size={18} /> PDF
                 </button>
-                <button
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="p-3 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition"
-                >
+                <button onClick={() => setDarkMode(!darkMode)} className="p-3 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition">
                   {darkMode ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
               </div>
@@ -320,9 +275,7 @@ const Reports = () => {
                 value={dateRange}
                 onChange={e => setDateRange(e.target.value)}
                 className={`px-5 py-3 rounded-xl border text-sm font-medium flex items-center gap-2 shadow-sm transition ${
-                  darkMode
-                    ? "bg-gray-800 border-gray-700 text-white"
-                    : "bg-white/80 border-gray-200"
+                  darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white/80 border-gray-200"
                 }`}
               >
                 <option value="thisMonth">This Month</option>
@@ -341,11 +294,7 @@ const Reports = () => {
                     startDate={customStart}
                     endDate={customEnd}
                     placeholderText="Start"
-                    className={`px-4 py-2 rounded-lg border text-sm ${
-                      darkMode
-                        ? "bg-gray-800 border-gray-700 text-white"
-                        : "bg-white border-gray-200"
-                    }`}
+                    className={`px-4 py-2 rounded-lg border text-sm ${darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200"}`}
                   />
                   <DatePicker
                     selected={customEnd}
@@ -355,11 +304,7 @@ const Reports = () => {
                     endDate={customEnd}
                     minDate={customStart}
                     placeholderText="End"
-                    className={`px-4 py-2 rounded-lg border text-sm ${
-                      darkMode
-                        ? "bg-gray-800 border-gray-700 text-white"
-                        : "bg-white border-gray-200"
-                    }`}
+                    className={`px-4 py-2 rounded-lg border text-sm ${darkMode ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-200"}`}
                   />
                 </div>
               )}
@@ -412,14 +357,8 @@ const Reports = () => {
                       <p className="text-2xl font-bold mt-1">₹{kpi.value.toLocaleString()}</p>
                       {kpi.growth !== undefined && (
                         <p className="text-xs mt-1 flex items-center gap-1">
-                          {kpi.growth > 0 ? (
-                            <ArrowUpRight size={14} className="text-emerald-300" />
-                          ) : (
-                            <ArrowDownRight size={14} className="text-rose-300" />
-                          )}
-                          <span className={kpi.growth > 0 ? "text-emerald-300" : "text-rose-300"}>
-                            {Math.abs(kpi.growth)}%
-                          </span>
+                          {kpi.growth > 0 ? <ArrowUpRight size={14} className="text-emerald-300" /> : <ArrowDownRight size={14} className="text-rose-300" />}
+                          <span className={kpi.growth > 0 ? "text-emerald-300" : "text-rose-300"}>{Math.abs(kpi.growth)}%</span>
                         </p>
                       )}
                       {kpi.margin !== undefined && <p className="text-xs mt-1">{kpi.margin}% margin</p>}
@@ -435,7 +374,7 @@ const Reports = () => {
               {reportTab === "overview" && (
                 <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-2xl shadow-xl">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <Activity size={20} className="text-indigo-600 dark:text-indigo-400" /> Daily Revenue
                       </h3>
@@ -450,7 +389,7 @@ const Reports = () => {
                       </ResponsiveContainer>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-xl">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
                       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <PieChart size={20} className="text-indigo-600 dark:text-indigo-400" /> Profit Margin
                       </h3>
@@ -467,7 +406,7 @@ const Reports = () => {
               )}
 
               {reportTab === "revenue" && (
-                <motion.div key="revenue" className="bg-white  p-6 rounded-2xl shadow-xl">
+                <motion.div key="revenue" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
                   <h3 className="text-lg font-semibold mb-4">Revenue Trend</h3>
                   <ResponsiveContainer width="100%" height={400}>
                     <AreaChart data={dailyRevenue}>
@@ -482,8 +421,8 @@ const Reports = () => {
               )}
 
               {reportTab === "expenses" && (
-                <motion.div key="expenses" className="bg-white p-6 rounded-2xl shadow-xl">
-                  <h3 className="text-lg dark:bg-gray-800 font-semibold mb-4">Expense Breakdown</h3>
+                <motion.div key="expenses" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+                  <h3 className="text-lg font-semibold mb-4">Expense Breakdown</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <RechartsPie>
                       <Pie
@@ -506,20 +445,17 @@ const Reports = () => {
               {reportTab === "customers" && (
                 <motion.div key="customers" className="space-y-4">
                   {topCustomers.length === 0 ? (
-                    <p className="text-center text-gray-500 dark:text-gray-400">No customer data</p>
+                    <p className="text-center text-gray-500">No customer data</p>
                   ) : (
                     topCustomers.map((c, i) => (
-                      <div
-                        key={i}
-                        className="bg-white p-5 rounded-xl shadow-md flex items-center justify-between"
-                      >
+                      <div key={i} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
                             {i + 1}
                           </div>
                           <div>
                             <p className="font-semibold">{c.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">₹{c.amount.toLocaleString()}</p>
+                            <p className="text-sm text-gray-500">₹{c.amount.toLocaleString()}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -536,10 +472,7 @@ const Reports = () => {
               {reportTab === "performance" && (
                 <motion.div key="performance" className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {performanceMetrics.map((m, i) => (
-                    <div
-                      key={i}
-                      className="bg-gradient-to-br from-violet-500 to-purple-600 p-6 rounded-2xl text-white shadow-xl"
-                    >
+                    <div key={i} className="bg-gradient-to-br from-violet-500 to-purple-600 p-6 rounded-2xl text-white shadow-xl">
                       <m.icon size={32} />
                       <p className="mt-3 text-sm opacity-90">{m.label}</p>
                       <p className="text-3xl font-bold">{m.value}</p>
