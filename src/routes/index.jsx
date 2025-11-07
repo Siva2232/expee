@@ -17,13 +17,14 @@ import CustomerDetails from "../pages/CustomerDetails";
 import ViewBooking from "../pages/ViewBooking";
 import Task from "../pages/Task";
 import Notification from "../pages/Notification";
+import AddWalletAmount from "../pages/AddWalletAmount";
 // Contexts
 import { BookingProvider } from "../context/BookingContext";
 import { FundsProvider } from "../context/FundsContext";
 import { ExpenseProvider } from "../context/ExpenseContext";
 import { NotificationProvider } from "../context/NotificationContext";
 import { TaskProvider } from "../context/TaskContext";
-
+import { WalletProvider } from "../context/WalletContext";
 const AppRoutes = () => {
   return (
     <BookingProvider>
@@ -31,6 +32,7 @@ const AppRoutes = () => {
         <ExpenseProvider>
           <NotificationProvider>
             <TaskProvider>
+              <WalletProvider>
           <Routes>
             {/* Auth */}
             <Route path="/signin" element={<SignIn />} />
@@ -48,6 +50,7 @@ const AppRoutes = () => {
 
             {/* Funds + Expenses */}
             <Route path="/funds" element={<FundsDashboard />} />
+            <Route path="/add-wallet-amount" element={<AddWalletAmount />} />
             <Route path="/add-revenue" element={<AddRevenue />} />
             <Route path="/log-expense" element={<LogExpense />} />
             <Route path="/view/:id" element={<ViewExpense />} />
@@ -61,6 +64,7 @@ const AppRoutes = () => {
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+              </WalletProvider>
             </TaskProvider>
           </NotificationProvider>
         </ExpenseProvider>

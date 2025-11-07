@@ -18,26 +18,34 @@ import {
   Moon,
   Filter,
   Search,
+  ChevronDown,
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import BookingTable from "./BookingTable";
 import { useBooking } from "../../context/BookingContext";
+import { useExpense } from "../../context/ExpenseContext";
 import { useState, useMemo, useEffect, useRef } from "react";
 
 const AllBookings = () => {
   const { bookings, removeBooking, updateBookingStatus, isLoading } = useBooking();
+  const { expenses = [] } = useExpense();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [darkMode, setDarkMode] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const statusRef = useRef(null);
+  const categoryRef = useRef(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (statusRef.current && !statusRef.current.contains(e.target)) {
         setShowStatusDropdown(false);
+      }
+      if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+        setShowCategoryDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -52,7 +60,6 @@ const AllBookings = () => {
     cab: Car,
     hotel: Hotel,
   };
-
   const categoryColors = {
     flight: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
     bus: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
@@ -60,6 +67,16 @@ const AllBookings = () => {
     cab: "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300",
     hotel: "bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300",
   };
+
+  // Categories Options
+  const categoryOptions = [
+    { value: "all", label: "All Categories" },
+    { value: "flight", label: "Flight" },
+    { value: "bus", label: "Bus" },
+    { value: "train", label: "Train" },
+    { value: "cab", label: "Cab" },
+    { value: "hotel", label: "Hotel" },
+  ];
 
   // Normalize
   const normalize = (str) => str?.trim().toLowerCase() || "";
@@ -75,13 +92,10 @@ const AllBookings = () => {
         normalize(booking.platform).includes(searchLower) ||
         normalize(booking.category).includes(searchLower) ||
         booking.id.toLowerCase().includes(searchLower);
-
       const matchesStatus =
         filterStatus === "all" || normalize(booking.status) === filterStatus;
-
       const matchesCategory =
         filterCategory === "all" || booking.category === filterCategory;
-
       return matchesSearch && matchesStatus && matchesCategory;
     });
   }, [bookings, searchTerm, filterStatus, filterCategory]);
@@ -92,9 +106,10 @@ const AllBookings = () => {
     const confirmed = bookings.filter((b) => normalize(b.status) === "confirmed").length;
     const pending = bookings.filter((b) => normalize(b.status) === "pending").length;
     const revenue = bookings.reduce((sum, b) => sum + (b.totalRevenue || 0), 0);
-    const basePayTotal = bookings.reduce((sum, b) => sum + (b.basePay || 0), 0);
-    return { total, confirmed, pending, revenue, basePayTotal };
-  }, [bookings]);
+    const expenseTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const netProfit = revenue - expenseTotal;
+    return { total, confirmed, pending, revenue, netProfit };
+  }, [bookings, expenses]);
 
   // Status Options
   const statusOptions = [
@@ -108,18 +123,16 @@ const AllBookings = () => {
     <DashboardLayout>
       <div className={`min-h-screen transition-colors duration-300 ${darkMode ? "bg-gray-900 text-white" : "bg-gradient-to-br from-slate-50 via-white to-indigo-50"}`}>
         <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-
           {/* === PREMIUM HEADING SECTION === */}
           <div className={`relative overflow-hidden rounded-2xl p-8 shadow-2xl text-white ${
-            darkMode 
-              ? "bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900" 
-              : "bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700"
+            darkMode
+              ? "bg-gradient-to-r from-gray-800 via-gray-700 to-gray-900"
+              : "bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700"
           }`}>
             <div className="absolute inset-0 opacity-10">
               <div className="absolute -top-10 -left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
               <div className="absolute -bottom-10 -right-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
             </div>
-
             <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -131,7 +144,6 @@ const AllBookings = () => {
                 <p className="text-lg text-white/90 max-w-md">
                   Manage bookings across flights, hotels, cabs, and more with real-time insights.
                 </p>
-
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
                     <TrendingUp size={18} className="text-green-300" />
@@ -139,11 +151,10 @@ const AllBookings = () => {
                     <span className="text-sm text-white/90">Total Active</span>
                   </div>
                   <div className="text-sm text-white/90">
-                    ₹{stats.revenue.toLocaleString()} revenue | ₹{stats.basePayTotal.toLocaleString()} base pay
+                    ₹{stats.revenue.toLocaleString()} revenue | Net Profit: ₹{stats.netProfit.toLocaleString()}
                   </div>
                 </div>
               </div>
-
               <div className="flex gap-3">
                 <Link
                   to="/bookings/add"
@@ -169,8 +180,8 @@ const AllBookings = () => {
               { label: "Total Bookings", value: stats.total, icon: Package, gradient: darkMode ? "from-blue-600 to-blue-700" : "from-blue-500 to-blue-600" },
               { label: "Confirmed", value: stats.confirmed, icon: Calendar, gradient: darkMode ? "from-emerald-600 to-emerald-700" : "from-green-500 to-emerald-600" },
               { label: "Pending", value: stats.pending, icon: Users, gradient: darkMode ? "from-orange-600 to-orange-700" : "from-amber-500 to-orange-600" },
-              { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, icon: DollarSign, gradient: darkMode ? "from-purple-600 to-purple-700" : "from-purple-500 to-indigo-600" },
-              { label: "Base Pay", value: `₹${stats.basePayTotal.toLocaleString()}`, icon: DollarSign, gradient: darkMode ? "from-cyan-600 to-cyan-700" : "from-cyan-500 to-teal-600" },
+              { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, icon: DollarSign, gradient: darkMode ? "from-purple-600 to-indigo-700" : "from-purple-500 to-indigo-600" },
+              { label: "Net Profit", value: `₹${stats.netProfit.toLocaleString()}`, icon: TrendingUp, gradient: stats.netProfit >= 0 ? (darkMode ? "from-emerald-600 to-emerald-700" : "from-green-500 to-emerald-600") : (darkMode ? "from-red-600 to-red-700" : "from-red-500 to-rose-600") },
             ].map((stat, idx) => (
               <div
                 key={idx}
@@ -204,25 +215,45 @@ const AllBookings = () => {
                 />
               </div>
             </div>
-
             {/* Filters */}
             <div className="flex gap-3 flex-wrap">
-              {/* Category Filter */}
-              <div className="relative">
+              {/* Category Dropdown */}
+              <div ref={categoryRef} className="relative">
                 <button
-                  onClick={() => setFilterCategory(filterCategory === "all" ? "flight" : "all")}
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
                   className={`flex items-center gap-2 px-4 py-3.5 rounded-xl font-medium transition-all ${
-                    filterCategory === "all"
-                      ? darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300"
+                    darkMode ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   <Filter size={18} />
                   Category
-                  {filterCategory !== "all" && <span className="capitalize">{filterCategory}</span>}
+                  {filterCategory !== "all" && (
+                    <span className="capitalize text-blue-600 dark:text-blue-400">{categoryOptions.find(c => c.value === filterCategory)?.label}</span>
+                  )}
+                  <ChevronDown size={16} className={`transition-transform ${showCategoryDropdown ? "rotate-180" : ""}`} />
                 </button>
+                {showCategoryDropdown && (
+                  <div className={`absolute top-full left-0 mt-2 w-48 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-xl border overflow-hidden z-20`}>
+                    {categoryOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setFilterCategory(opt.value);
+                          setShowCategoryDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 flex items-center justify-between transition-all ${
+                          filterCategory === opt.value
+                            ? darkMode ? "bg-blue-900/50 text-blue-300" : "bg-blue-50 text-blue-700"
+                            : darkMode ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {filterCategory === opt.value && <span className="text-green-500">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-
               {/* Status Dropdown */}
               <div ref={statusRef} className="relative">
                 <button
@@ -238,8 +269,8 @@ const AllBookings = () => {
                       {statusOptions.find(s => s.value === filterStatus)?.label}
                     </span>
                   )}
+                  <ChevronDown size={16} className={`transition-transform ${showStatusDropdown ? "rotate-180" : ""}`} />
                 </button>
-
                 {showStatusDropdown && (
                   <div className={`absolute top-full right-0 mt-2 w-48 ${darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"} rounded-xl shadow-xl border overflow-hidden z-20`}>
                     {statusOptions.map((opt) => (
@@ -256,7 +287,7 @@ const AllBookings = () => {
                         }`}
                       >
                         <span>{opt.label}</span>
-                        {filterStatus === opt.value && <span className="text-green-500">Check</span>}
+                        {filterStatus === opt.value && <span className="text-green-500">✓</span>}
                       </button>
                     ))}
                   </div>
@@ -312,7 +343,6 @@ const AllBookings = () => {
           </div>
         </div>
       </div>
-
       {/* Gradient Animation */}
       <style jsx>{`
         @keyframes gradient-x {

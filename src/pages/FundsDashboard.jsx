@@ -46,7 +46,21 @@ const FundsDashboard = () => {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [selectedTags, setSelectedTags] = useState([]);
 
-  // Enhanced Revenue by Period with Comparisons and Forecasts
+  // Filter confirmed bookings for revenue calculations
+  const confirmedBookings = useMemo(() => 
+    bookings.filter(b => b.status?.toLowerCase() === "confirmed"), 
+    [bookings]
+  );
+
+  // Recent bookings (last 5 confirmed, sorted by date desc)
+  const recentBookings = useMemo(() => 
+    confirmedBookings
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5), 
+    [confirmedBookings]
+  );
+
+  // Enhanced Revenue by Period with Comparisons and Forecasts (using confirmed bookings)
   const revenueByPeriod = useMemo(() => {
     const now = new Date();
     const dailyStart = startOfDay(now);
@@ -70,7 +84,7 @@ const FundsDashboard = () => {
 
     let daily = 0, prevDaily = 0, weekly = 0, prevWeekly = 0, monthly = 0, prevMonthly = 0, yearly = 0, prevYearly = 0;
 
-    bookings.forEach(b => {
+    confirmedBookings.forEach(b => {
       const date = new Date(b.date);
       const revenue = Number(b.totalRevenue) || 0;
 
@@ -96,7 +110,7 @@ const FundsDashboard = () => {
       monthly, prevMonthly, forecastMonthly,
       yearly, prevYearly, forecastYearly,
     };
-  }, [bookings]);
+  }, [confirmedBookings]);
 
   // Period-specific expenses
   const getPeriodExpenses = (start, end) => {
@@ -122,34 +136,34 @@ const FundsDashboard = () => {
     };
   }, [revenueByPeriod, expenses]);
 
-  // Enhanced Booking Stats
+  // Enhanced Booking Stats (using confirmed bookings)
   const bookingStats = useMemo(() => {
     const total = revenueByPeriod.yearly;
-    const avg = bookings.length ? Math.round(total / bookings.length) : 0;
-    const highest = bookings.reduce((max, b) => Math.max(max, Number(b.totalRevenue) || 0), 0);
-    const todaysBookings = bookings.filter(b => isToday(new Date(b.date)));
-    const avgBookingTime = bookings.length ? bookings.reduce((sum, b) => sum + (new Date(b.date).getHours() || 0), 0) / bookings.length : 0;
-    return { total, avg, highest, count: bookings.length, todaysCount: todaysBookings.length, avgBookingTime };
-  }, [revenueByPeriod, bookings]);
+    const avg = confirmedBookings.length ? Math.round(total / confirmedBookings.length) : 0;
+    const highest = confirmedBookings.reduce((max, b) => Math.max(max, Number(b.totalRevenue) || 0), 0);
+    const todaysBookings = confirmedBookings.filter(b => isToday(new Date(b.date)));
+    const avgBookingTime = confirmedBookings.length ? confirmedBookings.reduce((sum, b) => sum + (new Date(b.date).getHours() || 0), 0) / confirmedBookings.length : 0;
+    return { total, avg, highest, count: confirmedBookings.length, todaysCount: todaysBookings.length, avgBookingTime };
+  }, [revenueByPeriod, confirmedBookings]);
 
-  // Hourly data for daily
+  // Hourly data for daily (using confirmed bookings)
   const hourlyData = useMemo(() => {
     const today = new Date();
     const hours = eachHourOfInterval({ start: startOfDay(today), end: endOfDay(today) });
     return hours.map(hour => {
-      const hourBookings = bookings.filter(b => {
+      const hourBookings = confirmedBookings.filter(b => {
         const date = new Date(b.date);
         return date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear() && date.getHours() === hour.getHours();
       });
       return { hour: format(hour, 'HH:00'), revenue: hourBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0) };
     });
-  }, [bookings]);
+  }, [confirmedBookings]);
 
-  // Day-by-day for weekly
+  // Day-by-day for weekly (using confirmed bookings)
   const dailyDataWeekly = useMemo(() => {
     const week = eachDayOfInterval({ start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) });
     return week.map(day => {
-      const dayBookings = bookings.filter(b => {
+      const dayBookings = confirmedBookings.filter(b => {
         const date = new Date(b.date);
         return date.getDate() === day.getDate() && date.getMonth() === day.getMonth() && date.getFullYear() === day.getFullYear();
       });
@@ -157,15 +171,15 @@ const FundsDashboard = () => {
       const dayExpenses = getPeriodExpenses(startOfDay(day), endOfDay(day));
       return { day: format(day, 'EEE d'), revenue: dayRevenue, profit: dayRevenue - dayExpenses };
     });
-  }, [bookings, expenses]);
+  }, [confirmedBookings, expenses]);
 
-  // Month-by-month for yearly
+  // Month-by-month for yearly (using confirmed bookings)
   const monthlyDataYearly = useMemo(() => {
     const year = eachMonthOfInterval({ start: startOfYear(new Date()), end: endOfYear(new Date()) });
     return year.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
-      const monthBookings = bookings.filter(b => {
+      const monthBookings = confirmedBookings.filter(b => {
         const date = new Date(b.date);
         return date >= monthStart && date <= monthEnd;
       });
@@ -173,7 +187,7 @@ const FundsDashboard = () => {
       const monthExpenses = getPeriodExpenses(monthStart, monthEnd);
       return { month: format(month, 'MMM'), revenue: monthRevenue, profit: monthRevenue - monthExpenses };
     });
-  }, [bookings, expenses]);
+  }, [confirmedBookings, expenses]);
 
   // Goals
   const goals = useMemo(() => ({
@@ -183,9 +197,9 @@ const FundsDashboard = () => {
     yearly: { target: 1200000, achieved: revenueByPeriod.yearly },
   }), [revenueByPeriod]);
 
-  // Top Bookings
+  // Top Bookings (using confirmed bookings)
   const getTopBookings = (start, end, limit = 5) => {
-    return bookings
+    return confirmedBookings
       .filter(b => {
         const date = new Date(b.date);
         return date >= start && date <= end;
@@ -239,7 +253,7 @@ const FundsDashboard = () => {
   const exportCSV = () => {
     const headers = "Type,Date,Description,Base Pay,Revenue,Amount,Category,Tags\n";
     const rows = [
-      ...bookings.map(b => `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName},${b.basePay || 0},${b.totalRevenue || 0},,,`),
+      ...confirmedBookings.map(b => `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName},${b.basePay || 0},${b.totalRevenue || 0},,,`),
       ...expenses.map(e => `Expense,${format(new Date(e.date), "yyyy-MM-dd")},${e.description},,,-${e.amount},${e.category || "Other"},${e.tags?.join(',') || ''}`)
     ];
     const csv = headers + rows.join("\n");
@@ -297,6 +311,43 @@ const FundsDashboard = () => {
               </button>
             </div>
           </motion.header>
+
+          {/* Recent Bookings Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-gray-200"
+          >
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">Recent Bookings</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {recentBookings.length > 0 ? (
+                    recentBookings.map(b => (
+                      <tr key={b.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{b.customerName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{format(new Date(b.date), "MMM d, yyyy")}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-emerald-600">₹{Number(b.totalRevenue).toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-gray-500">No recent bookings</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
 
           {/* === ANIMATED TAB BAR === */}
           <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-2">
@@ -370,7 +421,7 @@ const FundsDashboard = () => {
                   profit={profit.monthly}
                   topBookings={getTopBookings(startOfMonth(new Date()), endOfMonth(new Date()))}
                   goal={goals.monthly}
-                  bookings={bookings} // Pass bookings for heatmap
+                  bookings={confirmedBookings} // Pass confirmed bookings for heatmap
                 />
               )}
               {activeTab === "yearly" && (

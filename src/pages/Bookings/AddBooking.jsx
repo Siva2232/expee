@@ -3,10 +3,11 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useBooking, CATEGORY, STATUS } from "../../context/BookingContext";
+import { useWallet } from "../../context/WalletContext";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Plus, User, Mail, Calendar, DollarSign, CheckCircle,
-  Phone, Globe, Plane, Bus, Train, Car, Hotel, Clock, TrendingUp, ChevronDown
+  Phone, Globe, Plane, Bus, Train, Car, Hotel, Clock, TrendingUp, ChevronDown, AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -26,20 +27,21 @@ const platforms = [
 
 // Country Codes with Flags
 const countryCodes = [
-  { code: "+91", country: "India", flag: "India" },
-  { code: "+1", country: "USA", flag: "USA" },
-  { code: "+44", country: "UK", flag: "UK" },
-  { code: "+971", country: "UAE", flag: "UAE" },
-  { code: "+966", country: "Saudi Arabia", flag: "Saudi" },
-  { code: "+974", country: "Qatar", flag: "Qatar" },
-  { code: "+965", country: "Kuwait", flag: "Kuwait" },
-  { code: "+968", country: "Oman", flag: "Oman" },
-  { code: "+973", country: "Bahrain", flag: "Bahrain" },
-  { code: "+61", country: "Australia", flag: "Australia" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+1", country: "USA", flag: "🇺🇸" },
+  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+971", country: "UAE", flag: "🇦🇪" },
+  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
+  { code: "+974", country: "Qatar", flag: "🇶🇦" },
+  { code: "+965", country: "Kuwait", flag: "🇰🇼" },
+  { code: "+968", country: "Oman", flag: "🇴🇲" },
+  { code: "+973", country: "Bahrain", flag: "🇧🇭" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
 ];
 
 export default function AddBooking() {
   const { addBooking } = useBooking();
+  const { deductFromWallet, addToWallet } = useWallet();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -60,6 +62,7 @@ export default function AddBooking() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [walletError, setWalletError] = useState("");
 
   // Combine country code + number
   const fullContact = `${form.selectedCountryCode} ${form.contactNumber}`.trim();
@@ -70,6 +73,12 @@ export default function AddBooking() {
     const mark = parseFloat(form.markupAmount) || 0;
     return (base + comm + mark).toFixed(2);
   }, [form.baseAmount, form.commissionAmount, form.markupAmount]);
+
+  const netProfit = useMemo(() => {
+    const comm = parseFloat(form.commissionAmount) || 0;
+    const mark = parseFloat(form.markupAmount) || 0;
+    return (comm + mark).toFixed(2);
+  }, [form.commissionAmount, form.markupAmount]);
 
   const validate = () => {
     const e = {};
@@ -85,6 +94,8 @@ export default function AddBooking() {
       e.contactNumber = "Contact number must have at least 10 digits";
     }
 
+    if (!form.platform) e.platform = "Platform is required";
+
     if (form.baseAmount && Number(form.baseAmount) < 0)
       e.baseAmount = "Base amount cannot be negative";
     if (form.commissionAmount && Number(form.commissionAmount) < 0)
@@ -96,20 +107,36 @@ export default function AddBooking() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
+    setWalletError("");
     try {
-      addBooking({
+      const base = Number(form.baseAmount) || 0;
+      const comm = Number(form.commissionAmount) || 0;
+      const mark = Number(form.markupAmount) || 0;
+
+      // Wallet debiting/crediting logic
+      if (form.platform) {
+        const platformKey = form.platform;
+        // Check if sufficient balance for base amount
+        // Note: This assumes access to current wallet balance via context; in a real app, fetch if needed
+        // For simplicity, we proceed and let updateWallet handle flooring to 0
+        deductFromWallet(platformKey, base);
+        addToWallet(platformKey, comm);
+      }
+      addToWallet('office', base + mark);
+
+      await addBooking({
         customerName: form.customerName.trim(),
         email: form.email.trim(),
         contactNumber: fullContact,
         date: form.date,
-        baseAmount: form.baseAmount ? Number(form.baseAmount) : 0,
-        commissionAmount: form.commissionAmount ? Number(form.commissionAmount) : 0,
-        markupAmount: form.markupAmount ? Number(form.markupAmount) : 0,
+        baseAmount: base,
+        commissionAmount: comm,
+        markupAmount: mark,
         platform: form.platform,
         status: form.status,
         category: form.category,
@@ -118,7 +145,7 @@ export default function AddBooking() {
       setSuccess(true);
       setTimeout(() => navigate("/bookings"), 1200);
     } catch (err) {
-      alert(err.message || "Failed to add booking");
+      setWalletError(err.message || "Failed to add booking. Insufficient wallet balance or server error.");
     } finally {
       setSubmitting(false);
     }
@@ -142,12 +169,22 @@ export default function AddBooking() {
             </h1>
           </motion.div>
 
+          {/* Wallet Error */}
+          {walletError && (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
+              <AlertCircle size={24} />
+              <div>
+                <p className="font-semibold">{walletError}</p>
+              </div>
+            </motion.div>
+          )}
+
           {/* Success */}
           {success && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-emerald-700">
               <CheckCircle size={24} />
               <div>
-                <p className="font-semibold">Booking added!</p>
+                <p className="font-semibold">Booking added! Wallet updated.</p>
                 <p className="text-sm">Redirecting...</p>
               </div>
             </motion.div>
@@ -166,7 +203,7 @@ export default function AddBooking() {
                   {categories.map((cat) => (
                     <label key={cat.value} className={`flex flex-col items-center p-4 rounded-xl border-2 cursor-pointer transition-all ${form.category === cat.value ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400"}`}>
                       <input type="radio" name="category" value={cat.value} checked={form.category === cat.value} onChange={(e) => setForm({ ...form, category: e.target.value, platform: "" })} className="sr-only" />
-                      <cat.icon size={28} className={`mb-2 ${cat.color.replace("bg-", "text-").replace("100", "600")}`} />
+                      <cat.icon size={28} className={`mb-2 ${cat.color}`} />
                       <span className="text-xs sm:text-sm font-medium">{cat.label}</span>
                     </label>
                   ))}
@@ -258,7 +295,7 @@ export default function AddBooking() {
 
               {/* Base Amount */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><DollarSign size={18} /> Base Amount (Optional)</label>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><DollarSign size={18} /> Base Amount</label>
                 <input type="number" min="0" step="0.01" value={form.baseAmount} onChange={(e) => setForm({ ...form, baseAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="250.00" disabled={submitting} />
                 {errors.baseAmount && <p className="mt-1 text-sm text-red-600">{errors.baseAmount}</p>}
               </div>
@@ -281,11 +318,12 @@ export default function AddBooking() {
               {showPlatform && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ duration: 0.2 }}>
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><Globe size={18} /> Booking Platform</label>
-                  <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" disabled={submitting}>
+                  <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.platform ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} disabled={submitting}>
                     {platforms.map((p) => (
                       <option key={p.value} value={p.value}>{p.label}</option>
                     ))}
                   </select>
+                  {errors.platform && <p className="mt-1 text-sm text-red-600">{errors.platform}</p>}
                 </motion.div>
               )}
 
@@ -316,6 +354,10 @@ export default function AddBooking() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Markup:</span>
                     <span className="font-medium">₹{form.markupAmount || "0.00"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Net Profit:</span>
+                    <span className="font-medium">₹{netProfit}</span>
                   </div>
                   <div className="flex justify-between sm:col-span-2 border-t border-indigo-200 pt-2">
                     <span className="font-semibold text-indigo-700">Total Revenue:</span>

@@ -5,9 +5,11 @@ import { Menu, X, Bell, Search, LogOut, Wallet, Plus, DollarSign } from "lucide-
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useNotifications } from "../context/NotificationContext";
+import { useWallet } from "../context/WalletContext";
 
 const Navbar = () => {
   const { unreadCount } = useNotifications();
+  const { walletData } = useWallet();
   const [open, setOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -20,11 +22,6 @@ const Navbar = () => {
       console.error("Logout failed:", error);
     }
   };
-
-  const walletData = [
-    { name: "AlHind Agency", amount: "₹1000", gradient: "from-indigo-500 to-purple-500", border: "indigo-200", text: "indigo-600" },
-    { name: "Akbar Agency", amount: "₹500", gradient: "from-emerald-500 to-teal-500", border: "emerald-200", text: "emerald-600" },
-  ];
 
   return (
     <header className="relative w-full bg-white/70 backdrop-blur-2xl border-b border-white/20 shadow-lg overflow-hidden">
@@ -45,7 +42,7 @@ const Navbar = () => {
       {/* Full Width, 5 Items Evenly Spaced */}
       <div className="relative flex items-center justify-between w-full py-3 px-4 sm:px-6">
         
-        {/* Left: Wallets (2) */}
+        {/* Left: Wallets (3) */}
         <div className="hidden lg:flex items-center gap-5">
           {walletData.map((wallet, i) => (
             <motion.div
@@ -54,11 +51,11 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ scale: 1.04, y: -1 }}
-              className={`group flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r ${wallet.gradient}/10 rounded-2xl border border-${wallet.border}/40 backdrop-blur-md shadow-sm cursor-pointer transition-all`}
+              className="group flex items-center gap-3 px-5 py-2.5 bg-gray-50 rounded-2xl border border-gray-200 backdrop-blur-md shadow-sm cursor-pointer transition-all"
             >
-              <Wallet size={18} className={`text-${wallet.text} group-hover:animate-pulse`} />
+              <Wallet size={18} className="text-gray-700 group-hover:animate-pulse" />
               <div>
-                <p className={`text-sm font-semibold text-${wallet.text}`}>{wallet.name}</p>
+                <p className="text-sm font-semibold text-gray-900">{wallet.name}</p>
                 <p className="text-base font-bold text-gray-800">{wallet.amount}</p>
               </div>
             </motion.div>
@@ -159,15 +156,15 @@ const Navbar = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className={`p-4 rounded-2xl bg-gradient-to-br ${wallet.gradient}/10 border border-${wallet.border}/40 backdrop-blur-md shadow-md`}
+                    className="p-4 rounded-2xl bg-gray-50 border border-gray-200 backdrop-blur-md shadow-md"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg bg-gradient-to-br ${wallet.gradient} shadow-md`}>
-                          <Wallet size={18} className="text-white" />
+                        <div className="p-2 rounded-lg bg-gray-300 shadow-md">
+                          <Wallet size={18} className="text-gray-700" />
                         </div>
                         <div>
-                          <p className={`text-sm font-bold text-${wallet.text}`}>{wallet.name}</p>
+                          <p className="text-sm font-bold text-gray-900">{wallet.name}</p>
                           <p className="text-xl font-extrabold text-gray-800">{wallet.amount}</p>
                         </div>
                       </div>
@@ -183,6 +180,7 @@ const Navbar = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   className="py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2"
+                  onClick={() => navigate("/add-booking")}
                 >
                   <Plus size={20} />
                   New Booking
@@ -191,9 +189,10 @@ const Navbar = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   className="py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2"
+                  onClick={() => navigate("/add-wallet-amount")}
                 >
                   <DollarSign size={20} />
-                  Add Expense
+                  Add Wallet
                 </motion.button>
               </div>
 

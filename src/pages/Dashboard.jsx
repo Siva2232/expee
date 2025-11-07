@@ -21,13 +21,17 @@ import {
   isWithinInterval,
 } from "date-fns";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
+  ReferenceLine,
+  BarChart,
+  Bar,
   Cell
 } from 'recharts';
 
@@ -69,20 +73,20 @@ const Dashboard = () => {
   /* ────────────────────── CURRENT STATS ────────────────────── */
   const currentStats = useMemo(() => {
     const totalRevenue = currentBookings.reduce((s, b) => s + (b.totalRevenue || 0), 0);
-    const totalBasePay = currentBookings.reduce((s, b) => s + (b.basePay || 0), 0);
+    const totalBaseAmount = currentBookings.reduce((s, b) => s + (b.baseAmount || 0), 0);
     const count = currentBookings.length;
     const avgRevenue = count > 0 ? totalRevenue / count : 0;
     const highestRevenue = currentBookings.reduce((m, b) => Math.max(m, b.totalRevenue || 0), 0);
-    return { totalRevenue, totalBasePay, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
+    return { totalRevenue, totalBaseAmount, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
   }, [currentBookings]);
 
   const previousStats = useMemo(() => {
     const totalRevenue = previousBookings.reduce((s, b) => s + (b.totalRevenue || 0), 0);
-    const totalBasePay = previousBookings.reduce((s, b) => s + (b.basePay || 0), 0);
+    const totalBaseAmount = previousBookings.reduce((s, b) => s + (b.baseAmount || 0), 0);
     const count = previousBookings.length;
     const avgRevenue = count > 0 ? totalRevenue / count : 0;
     const highestRevenue = previousBookings.reduce((m, b) => Math.max(m, b.totalRevenue || 0), 0);
-    return { totalRevenue, totalBasePay, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
+    return { totalRevenue, totalBaseAmount, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
   }, [previousBookings]);
 
   const currentNetProfit = currentStats.totalRevenue - currentExpenseTotal;
@@ -114,7 +118,7 @@ const Dashboard = () => {
   const stats = [
     { title: "Total Bookings", value: currentStats.count, trend: trends.bookings, icon: Calendar, gradient: "from-violet-500 to-purple-600" },
     { title: "Total Revenue", value: `₹${currentStats.totalRevenue.toLocaleString()}`, trend: trends.revenue, icon: DollarSign, gradient: "from-emerald-500 to-teal-600" },
-    { title: "Base Pay Total", value: `₹${currentStats.totalBasePay.toLocaleString()}`, trend: null, icon: DollarSign, gradient: "from-cyan-500 to-blue-600" },
+    { title: "Base Amount Total", value: `₹${currentStats.totalBaseAmount.toLocaleString()}`, trend: null, icon: DollarSign, gradient: "from-cyan-500 to-blue-600" },
     { title: "Avg Revenue", value: `₹${currentStats.avgRevenue.toLocaleString()}`, trend: trends.avgBooking, icon: TrendingUp, gradient: "from-cyan-500 to-blue-600" },
     { title: "Highest Revenue", value: `₹${currentStats.highestRevenue.toLocaleString()}`, trend: trends.highest, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
     { title: "Total Expenses", value: `₹${currentExpenseTotal.toLocaleString()}`, trend: trends.expenses, icon: Receipt, gradient: "from-rose-500 to-red-600" },
@@ -149,6 +153,52 @@ const Dashboard = () => {
     const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
     return sorted.map((s, i) => ({ ...s, fill: colors[i] || '#6366f1' }));
   }, [bookings]);
+
+  /* ────────────────────── CHART DATA FOR REVENUE TREND ────────────────────── */
+  const chartData = useMemo(() => {
+    const months = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const date = subMonths(now, i);
+      months.push({
+        month: format(date, 'MMM yy'),
+        revenue: 0,
+        expense: 0
+      });
+    }
+
+    bookings.forEach(b => {
+      if (b.date) {
+        const d = new Date(b.date);
+        const monthKey = format(d, 'MMM yy');
+        const idx = months.findIndex(m => m.month === monthKey);
+        if (idx !== -1) {
+          months[idx].revenue += (b.totalRevenue || 0);
+        }
+      }
+    });
+
+    expenses.forEach(e => {
+      if (e.date) {
+        const d = new Date(e.date);
+        const monthKey = format(d, 'MMM yy');
+        const idx = months.findIndex(m => m.month === monthKey);
+        if (idx !== -1) {
+          months[idx].expense += (e.amount || 0);
+        }
+      }
+    });
+
+    return months.map(m => ({
+      month: m.month,
+      revenue: m.revenue,
+      expense: -m.expense,  // Negative for downward trend visualization
+      profit: m.revenue - m.expense  // Actual net profit
+    }));
+  }, [bookings, expenses]);
+
+  const gridStroke = darkMode ? "#374151" : "#f1f5f9";
+  const refStroke = darkMode ? "#6b7280" : "#9ca3af";
 
   /* ────────────────────── RENDER ────────────────────── */
   return (
@@ -293,20 +343,79 @@ const Dashboard = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className={`text-xl font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>Revenue Trend</h2>
-                    <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Commission + Markup</p>
+                    <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Revenue (+), Expenses (-) & Net Profit Over Time</p>
                   </div>
                   <select className={`px-4 py-2 text-sm rounded-xl border ${
                     darkMode
                       ? "bg-gray-700 border-gray-600 text-white"
                       : "bg-white border-gray-200"
                   } focus:ring-2 focus:ring-indigo-500`}>
-                    <option>Last 7 days</option>
-                    <option>Last 30 days</option>
                     <option>Last 12 months</option>
+                    <option>Last 6 months</option>
+                    <option>Last 3 months</option>
                   </select>
                 </div>
               </div>
-              <div className="p-6"><div className="h-80"><FundsChart /></div></div>
+              <div className="p-6">
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                      <XAxis dataKey="month" tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#64748b" }} />
+                      <YAxis tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#64748b" }} allowDecimals={false} />
+                      <ReferenceLine y={0} stroke={refStroke} strokeDasharray="3 3" label={{ position: 'top', fill: darkMode ? '#9ca3af' : '#64748b', fontSize: 12 }} />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          const label = name === 'revenue' ? 'Revenue' : name === 'expense' ? 'Expenses' : 'Net Profit';
+                          const sign = name === 'revenue' ? '' : name === 'profit' ? '' : '-';
+                          return [`₹${Math.abs(value).toLocaleString()}`, `${sign}${label}`];
+                        }}
+                        contentStyle={{
+                          backgroundColor: darkMode ? "#1f2937" : "#f8fafc",
+                          border: `1px solid ${darkMode ? "#374151" : "#e2e8f0"}`,
+                          borderRadius: "8px"
+                        }}
+                        labelStyle={{ color: darkMode ? "#ffffff" : "#374151" }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ 
+                          paddingTop: '10px',
+                          fontSize: '12px',
+                          color: darkMode ? "#9ca3af" : "#64748b"
+                        }} 
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#10b981" 
+                        strokeWidth={3} 
+                        name="Revenue"
+                        dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: "#10b981", strokeWidth: 2 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="expense" 
+                        stroke="#ef4444" 
+                        strokeWidth={3} 
+                        name="Expenses"
+                        dot={{ fill: "#ef4444", strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: "#ef4444", strokeWidth: 2 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="profit" 
+                        stroke="#3b82f6" 
+                        strokeWidth={3} 
+                        name="Net Profit"
+                        strokeDasharray="5 5"
+                        dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6, stroke: "#3b82f6", strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </motion.div>
 
             {/* Recent Activity */}
@@ -399,7 +508,7 @@ const Dashboard = () => {
                 <table className="w-full">
                   <thead className={darkMode ? "bg-gray-700" : "bg-gray-50"}>
                     <tr>
-                      {["ID","Customer","Date","Base Pay","Revenue","Status"].map(h => (
+                      {["ID","Customer","Date","Base Amount","Revenue","Status"].map(h => (
                         <th key={h} className={`px-6 py-3 text-left text-xs font-medium uppercase ${darkMode ? "text-gray-300" : "text-gray-500"}`}>{h}</th>
                       ))}
                     </tr>
@@ -415,7 +524,7 @@ const Dashboard = () => {
                           <td className="px-6 py-3 text-sm font-medium text-indigo-600">#{b.id}</td>
                           <td className={`px-6 py-3 text-sm ${darkMode ? "text-white" : "text-gray-900"}`}>{b.customerName}</td>
                           <td className={`px-6 py-3 text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{format(new Date(b.date), "MMM d, yyyy")}</td>
-                          <td className={`px-6 py-3 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>₹{Number(b.basePay || 0).toLocaleString()}</td>
+                          <td className={`px-6 py-3 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>₹{Number(b.baseAmount || 0).toLocaleString()}</td>
                           <td className={`px-6 py-3 text-sm font-bold ${darkMode ? "text-emerald-400" : "text-emerald-700"}`}>₹{Number(b.totalRevenue || 0).toLocaleString()}</td>
                           <td className="px-6 py-3">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
@@ -454,7 +563,7 @@ const Dashboard = () => {
                 {topSources.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={topSources} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#374151" : "#f1f5f9"} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
                       <XAxis type="number" hide />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: darkMode ? "#9ca3af" : "#64748b" }} width={120} />
                       <Tooltip

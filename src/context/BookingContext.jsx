@@ -150,7 +150,7 @@ export const BookingProvider = ({ children }) => {
       email,
       contactNumber,
       date,
-      basePay = 0,
+      baseAmount = 0,
       commissionAmount = 0,
       markupAmount = 0,
       platform = "",
@@ -168,7 +168,7 @@ export const BookingProvider = ({ children }) => {
 
     if (!date) throw new Error("Date is required");
 
-    if (basePay < 0) throw new Error("Base pay cannot be negative");
+    if (baseAmount < 0) throw new Error("Base amount cannot be negative");
     if (commissionAmount < 0) throw new Error("Commission cannot be negative");
     if (markupAmount < 0) throw new Error("Markup cannot be negative");
 
@@ -180,7 +180,8 @@ export const BookingProvider = ({ children }) => {
     if (["flight", "hotel", "cab"].includes(category) && !platform)
       throw new Error("Platform is required");
 
-    const totalRevenue = Number(commissionAmount) + Number(markupAmount);
+    const totalRevenue = Number(baseAmount) + Number(commissionAmount) + Number(markupAmount);
+    const netProfit = Number(commissionAmount) + Number(markupAmount);
 
     const newBooking = {
       id: `BK${Date.now()}${Math.floor(Math.random() * 1000)}`,
@@ -188,10 +189,11 @@ export const BookingProvider = ({ children }) => {
       email: email.trim().toLowerCase(),
       contactNumber: contactNumber.trim(), // ✅ No validation applied
       date,
-      basePay: Number(basePay),
+      baseAmount: Number(baseAmount),
       commissionAmount: Number(commissionAmount),
       markupAmount: Number(markupAmount),
       totalRevenue: Number(totalRevenue.toFixed(2)),
+      netProfit: Number(netProfit.toFixed(2)),
       platform,
       status,
       category,
@@ -237,9 +239,10 @@ export const BookingProvider = ({ children }) => {
     const confirmed = bookings.filter((b) => b.status === STATUS.CONFIRMED).length;
     const cancelled = total - pending - confirmed;
     const revenue = bookings.reduce((sum, b) => sum + b.totalRevenue, 0);
-    const basePayTotal = bookings.reduce((sum, b) => sum + b.basePay, 0);
+    const netProfitTotal = bookings.reduce((sum, b) => sum + b.netProfit, 0);
+    const baseAmountTotal = bookings.reduce((sum, b) => sum + b.baseAmount, 0);
 
-    return { total, pending, confirmed, cancelled, revenue, basePayTotal };
+    return { total, pending, confirmed, cancelled, revenue, netProfitTotal, baseAmountTotal };
   };
 
   return (
