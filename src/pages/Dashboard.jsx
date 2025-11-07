@@ -10,7 +10,7 @@ import {
   TrendingUp, Calendar, DollarSign, Activity,
   Download, Search, Clock, UserCheck, FileText,
   ArrowUpRight, ArrowDownRight, Receipt, AlertTriangle,
-  Moon, Sun,IndianRupee
+  Moon, Sun, IndianRupee
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -43,16 +43,17 @@ const Dashboard = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [darkMode, setDarkMode] = useState(false);               // <-- NEW
+  const [darkMode, setDarkMode] = useState(false);
 
   /* ────────────────────── DATE PERIODS ────────────────────── */
   const currentPeriod = useMemo(() => {
-    const now = new Date();
+    // Updated to reflect the specific date: November 07, 2025
+    const now = new Date('2025-11-07');
     return { start: startOfMonth(now), end: endOfMonth(now) };
   }, []);
 
   const previousPeriod = useMemo(() => {
-    const prev = subMonths(new Date(), 1);
+    const prev = subMonths(new Date('2025-11-07'), 1);
     return { start: startOfMonth(prev), end: endOfMonth(prev) };
   }, []);
 
@@ -73,24 +74,26 @@ const Dashboard = () => {
   /* ────────────────────── CURRENT STATS ────────────────────── */
   const currentStats = useMemo(() => {
     const totalRevenue = currentBookings.reduce((s, b) => s + (b.totalRevenue || 0), 0);
-    const totalBaseAmount = currentBookings.reduce((s, b) => s + (b.baseAmount || 0), 0);
+    const totalBaseAmount = currentBookings.reduce((s, b) => s + (b.basePay || 0), 0); // Aligned with context field name
+    const totalNetProfit = currentBookings.reduce((s, b) => s + (b.netProfit || 0), 0);
     const count = currentBookings.length;
     const avgRevenue = count > 0 ? totalRevenue / count : 0;
     const highestRevenue = currentBookings.reduce((m, b) => Math.max(m, b.totalRevenue || 0), 0);
-    return { totalRevenue, totalBaseAmount, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
+    return { totalRevenue, totalBaseAmount, totalNetProfit, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
   }, [currentBookings]);
 
   const previousStats = useMemo(() => {
     const totalRevenue = previousBookings.reduce((s, b) => s + (b.totalRevenue || 0), 0);
-    const totalBaseAmount = previousBookings.reduce((s, b) => s + (b.baseAmount || 0), 0);
+    const totalBaseAmount = previousBookings.reduce((s, b) => s + (b.basePay || 0), 0); // Aligned with context field name
+    const totalNetProfit = previousBookings.reduce((s, b) => s + (b.netProfit || 0), 0);
     const count = previousBookings.length;
     const avgRevenue = count > 0 ? totalRevenue / count : 0;
     const highestRevenue = previousBookings.reduce((m, b) => Math.max(m, b.totalRevenue || 0), 0);
-    return { totalRevenue, totalBaseAmount, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
+    return { totalRevenue, totalBaseAmount, totalNetProfit, count, avgRevenue: Math.round(avgRevenue), highestRevenue };
   }, [previousBookings]);
 
-  const currentNetProfit = currentStats.totalRevenue - currentExpenseTotal;
-  const previousNetProfit = previousStats.totalRevenue - prevExpenseTotal;
+  const currentNetProfit = currentStats.totalNetProfit - currentExpenseTotal;
+  const previousNetProfit = previousStats.totalNetProfit - prevExpenseTotal;
 
   /* ────────────────────── TREND CALCULATOR ────────────────────── */
   const calcTrend = (cur, prev) => {
@@ -115,16 +118,15 @@ const Dashboard = () => {
     profit: calcTrend(currentNetProfit, previousNetProfit),
   };
 
-const stats = [
-  { title: "Total Bookings", value: currentStats.count, trend: trends.bookings, icon: Calendar, gradient: "from-violet-500 to-purple-600" },
-  { title: "Total Revenue", value: `₹${currentStats.totalRevenue.toLocaleString()}`, trend: trends.revenue, icon: IndianRupee, gradient: "from-emerald-500 to-teal-600" },
-  { title: "Base Amount Total", value: `₹${currentStats.totalBaseAmount.toLocaleString()}`, trend: null, icon: IndianRupee, gradient: "from-cyan-500 to-blue-600" },
-  { title: "Avg Revenue", value: `₹${currentStats.avgRevenue.toLocaleString()}`, trend: trends.avgBooking, icon: TrendingUp, gradient: "from-cyan-500 to-blue-600" },
-  { title: "Highest Revenue", value: `₹${currentStats.highestRevenue.toLocaleString()}`, trend: trends.highest, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
-  { title: "Total Expenses", value: `₹${currentExpenseTotal.toLocaleString()}`, trend: trends.expenses, icon: Receipt, gradient: "from-rose-500 to-red-600" },
-  { title: "Net Profit", value: `₹${currentNetProfit.toLocaleString()}`, trend: trends.profit, icon: Activity, gradient: (currentNetProfit >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600") },
-];
-
+  const stats = [
+    { title: "Total Bookings", value: currentStats.count, trend: trends.bookings, icon: Calendar, gradient: "from-violet-500 to-purple-600" },
+    { title: "Total Revenue", value: `₹${currentStats.totalRevenue.toLocaleString()}`, trend: trends.revenue, icon: IndianRupee, gradient: "from-emerald-500 to-teal-600" },
+    { title: "Base Amount Total", value: `₹${currentStats.totalBaseAmount.toLocaleString()}`, trend: null, icon: IndianRupee, gradient: "from-cyan-500 to-blue-600" },
+    { title: "Avg Revenue", value: `₹${currentStats.avgRevenue.toLocaleString()}`, trend: trends.avgBooking, icon: TrendingUp, gradient: "from-cyan-500 to-blue-600" },
+    { title: "Highest Revenue", value: `₹${currentStats.highestRevenue.toLocaleString()}`, trend: trends.highest, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
+    { title: "Total Expenses", value: `₹${currentExpenseTotal.toLocaleString()}`, trend: trends.expenses, icon: Receipt, gradient: "from-rose-500 to-red-600" },
+    { title: "Net Profit", value: `₹${currentNetProfit.toLocaleString()}`, trend: trends.profit, icon: Activity, gradient: (currentNetProfit >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600") },
+  ];
 
   /* ────────────────────── FILTERED BOOKINGS ────────────────────── */
   const filteredBookings = useMemo(() => {
@@ -158,12 +160,13 @@ const stats = [
   /* ────────────────────── CHART DATA FOR REVENUE TREND ────────────────────── */
   const chartData = useMemo(() => {
     const months = [];
-    const now = new Date();
+    const now = new Date('2025-11-07'); // Updated to match the current date
     for (let i = 11; i >= 0; i--) {
       const date = subMonths(now, i);
       months.push({
         month: format(date, 'MMM yy'),
         revenue: 0,
+        netProfit: 0, // New: aggregate netProfit per month
         expense: 0
       });
     }
@@ -175,6 +178,7 @@ const stats = [
         const idx = months.findIndex(m => m.month === monthKey);
         if (idx !== -1) {
           months[idx].revenue += (b.totalRevenue || 0);
+          months[idx].netProfit += (b.netProfit || 0); // New: aggregate netProfit
         }
       }
     });
@@ -194,7 +198,7 @@ const stats = [
       month: m.month,
       revenue: m.revenue,
       expense: -m.expense,  // Negative for downward trend visualization
-      profit: m.revenue - m.expense  // Actual net profit
+      profit: m.netProfit - m.expense  // Updated: Use aggregated netProfit - expense
     }));
   }, [bookings, expenses]);
 
@@ -234,7 +238,7 @@ const stats = [
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-sm bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full w-fit">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span>Live • {format(new Date(), "h:mm a")}</span>
+                    <span>Live • {format(new Date('2025-11-07'), "h:mm a")}</span> {/* Updated timestamp format */}
                   </div>
                   <div className="text-white/80">
                     Net Profit: <strong>₹{currentNetProfit.toLocaleString()}</strong>
@@ -525,7 +529,7 @@ const stats = [
                           <td className="px-6 py-3 text-sm font-medium text-indigo-600">#{b.id}</td>
                           <td className={`px-6 py-3 text-sm ${darkMode ? "text-white" : "text-gray-900"}`}>{b.customerName}</td>
                           <td className={`px-6 py-3 text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{format(new Date(b.date), "MMM d, yyyy")}</td>
-                          <td className={`px-6 py-3 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>₹{Number(b.baseAmount || 0).toLocaleString()}</td>
+                          <td className={`px-6 py-3 text-sm ${darkMode ? "text-gray-300" : "text-gray-600"}`}>₹{Number(b.basePay || 0).toLocaleString()}</td> {/* Aligned with context field */}
                           <td className={`px-6 py-3 text-sm font-bold ${darkMode ? "text-emerald-400" : "text-emerald-700"}`}>₹{Number(b.totalRevenue || 0).toLocaleString()}</td>
                           <td className="px-6 py-3">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${

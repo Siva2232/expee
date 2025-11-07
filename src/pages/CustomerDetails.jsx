@@ -41,15 +41,8 @@ const categoryColors = {
 };
 
 const platformLabels = {
-  makemytrip: "MakeMyTrip",
-  goibibo: "Goibibo",
-  yatra: "Yatra",
-  cleartrip: "ClearTrip",
-  expedia: "Expedia",
-  bookingcom: "Booking.com",
-  agoda: "Agoda",
-  direct: "Direct",
-  other: "Other",
+  alhind: "AlHind",
+  akbar: "Akbar",
 };
 
 export default function CustomerDetails() {
@@ -60,7 +53,7 @@ export default function CustomerDetails() {
   // Latest customer
   const latestCustomer = useMemo(() => {
     if (!bookings.length) return null;
-    return [...bookings].sort((a, b) => (b.id > a.id ? 1 : -1))[0];
+    return [...bookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }, [bookings]);
 
   // All bookings for customer
@@ -79,7 +72,7 @@ export default function CustomerDetails() {
     const confirmed = customerBookings.filter((b) => b.status === "confirmed").length;
     const pending = customerBookings.filter((b) => b.status === "pending").length;
     const revenue = customerBookings.reduce(
-      (sum, b) => sum + b.baseAmount + b.commissionAmount + b.markupAmount,
+      (sum, b) => sum + (b.totalRevenue || 0),
       0
     );
     return { total, confirmed, pending, revenue };
@@ -206,7 +199,6 @@ export default function CustomerDetails() {
                 <tbody className="divide-y divide-gray-200/50">
                   {customerBookings.map((b) => {
                     const Icon = categoryIcons[b.category] || Package;
-                    const total = b.baseAmount + b.commissionAmount + b.markupAmount;
 
                     return (
                       <motion.tr
@@ -246,9 +238,9 @@ export default function CustomerDetails() {
                         </td>
                         <td className="py-4 px-6">
                           <div>
-                            <p className="font-bold text-green-700">₹{total.toLocaleString()}</p>
+                            <p className="font-bold text-green-700">₹{Number(b.totalRevenue || 0).toLocaleString()}</p>
                             <p className="text-xs text-gray-500">
-                              B:₹{b.baseAmount} + C:₹{b.commissionAmount} + M:₹{b.markupAmount}
+                              B:₹{Number(b.basePay || 0).toFixed(2)} + C:₹{Number(b.commissionAmount || 0).toFixed(2)} + M:₹{Number(b.markupAmount || 0).toFixed(2)}
                             </p>
                           </div>
                         </td>

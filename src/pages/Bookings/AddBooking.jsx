@@ -80,6 +80,10 @@ export default function AddBooking() {
     return (comm + mark).toFixed(2);
   }, [form.commissionAmount, form.markupAmount]);
 
+  const basePayDisplay = useMemo(() => (parseFloat(form.basePay) || 0).toFixed(2), [form.basePay]);
+  const commissionDisplay = useMemo(() => (parseFloat(form.commissionAmount) || 0).toFixed(2), [form.commissionAmount]);
+  const markupDisplay = useMemo(() => (parseFloat(form.markupAmount) || 0).toFixed(2), [form.markupAmount]);
+
   const validate = () => {
     const e = {};
 
@@ -94,7 +98,10 @@ export default function AddBooking() {
       e.contactNumber = "Contact number must have at least 10 digits";
     }
 
-    if (!form.platform) e.platform = "Platform is required";
+    // Platform validation conditional on category
+    if (["flight", "hotel", "cab"].includes(form.category) && !form.platform) {
+      e.platform = "Platform is required for this category";
+    }
 
     if (form.basePay && Number(form.basePay) < 0)
       e.basePay = "Base pay cannot be negative";
@@ -117,6 +124,14 @@ export default function AddBooking() {
       const base = Number(form.basePay) || 0;
       const comm = Number(form.commissionAmount) || 0;
       const mark = Number(form.markupAmount) || 0;
+      const totalRevenueValue = base + comm + mark;
+      const netProfitValue = comm + mark;
+
+      // Optional: Rare case check - if total revenue equals markup (base + comm === 0), log or handle as needed
+      // Since it's rare and business-specific, we can just proceed; add console.warn for debugging if desired
+      if (base + comm === 0 && mark > 0) {
+        console.warn("Rare case detected: Total revenue equals markup (basePay + commission = 0). Confirming business logic.");
+      }
 
       // Wallet debiting/crediting logic
       if (form.platform) {
@@ -137,6 +152,8 @@ export default function AddBooking() {
         basePay: base,
         commissionAmount: comm,
         markupAmount: mark,
+        totalRevenue: totalRevenueValue,
+        netProfit: netProfitValue,
         platform: form.platform,
         status: form.status,
         category: form.category,
@@ -296,21 +313,21 @@ export default function AddBooking() {
               {/* Base Pay */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><IndianRupee size={18} /> Base Pay</label>
-                <input type="number" min="0" step="0.01" value={form.basePay} onChange={(e) => setForm({ ...form, basePay: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="250.00" disabled={submitting} />
+                <input type="number" min="0" step="0.01" value={form.basePay} onChange={(e) => setForm({ ...form, basePay: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.basePay ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="250.00" disabled={submitting} />
                 {errors.basePay && <p className="mt-1 text-sm text-red-600">{errors.basePay}</p>}
               </div>
 
               {/* Commission Amount */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><IndianRupee size={18} /> Commission Amount</label>
-                <input type="number" min="0" step="0.01" value={form.commissionAmount} onChange={(e) => setForm({ ...form, commissionAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="50.00" disabled={submitting} />
+                <input type="number" min="0" step="0.01" value={form.commissionAmount} onChange={(e) => setForm({ ...form, commissionAmount: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.commissionAmount ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="50.00" disabled={submitting} />
                 {errors.commissionAmount && <p className="mt-1 text-sm text-red-600">{errors.commissionAmount}</p>}
               </div>
 
               {/* Markup Amount */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><TrendingUp size={18} /> Markup Amount</label>
-                <input type="number" min="0" step="0.01" value={form.markupAmount} onChange={(e) => setForm({ ...form, markupAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="25.00" disabled={submitting} />
+                <input type="number" min="0" step="0.01" value={form.markupAmount} onChange={(e) => setForm({ ...form, markupAmount: e.target.value })} className={`w-full px-4 py-3 rounded-xl border ${errors.markupAmount ? "border-red-500" : "border-gray-300"} bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base`} placeholder="25.00" disabled={submitting} />
                 {errors.markupAmount && <p className="mt-1 text-sm text-red-600">{errors.markupAmount}</p>}
               </div>
 
@@ -345,15 +362,15 @@ export default function AddBooking() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Base Pay:</span>
-                    <span className="font-medium">₹{form.basePay || "0.00"}</span>
+                    <span className="font-medium">₹{basePayDisplay}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Commission:</span>
-                    <span className="font-medium">₹{form.commissionAmount || "0.00"}</span>
+                    <span className="font-medium">₹{commissionDisplay}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Markup:</span>
-                    <span className="font-medium">₹{form.markupAmount || "0.00"}</span>
+                    <span className="font-medium">₹{markupDisplay}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Net Profit:</span>

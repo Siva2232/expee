@@ -48,6 +48,9 @@ export const WalletProvider = ({ children }) => {
 
   const deductFromWallet = (walletKey, amount) => {
     if (!walletKey || amount <= 0) return;
+    if (wallets[walletKey] < amount) {
+      throw new Error(`Insufficient balance in ${walletKey}. Available: ₹${wallets[walletKey].toFixed(2)}, Required: ₹${amount.toFixed(2)}`);
+    }
     updateWallet(walletKey, amount, "deduct");
   };
 

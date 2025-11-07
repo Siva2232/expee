@@ -51,7 +51,7 @@ export default function AddWalletAmount() {
       logTransaction(form.wallet, amount, operation, form.name.trim());
 
       setSuccess(true);
-      setTimeout(() => navigate("/"), 1000);
+      setTimeout(() => navigate("/add-wallet-amount"), 1000);
     } catch (err) {
       alert(err.message);
     } finally {

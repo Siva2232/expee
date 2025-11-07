@@ -16,28 +16,12 @@ import {
   Package,
 } from "lucide-react";
 
-// === Category Icons & Colors ===
-const categoryConfig = {
-  flight: { icon: Plane, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" },
-  bus:    { icon: Bus,  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" },
-  train:  { icon: Train,color: "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300" },
-  cab:    { icon: Car,  color: "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300" },
-  hotel:  { icon: Hotel,color: "bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300" },
-};
-
 const platformLabels = {
-  makemytrip: "MakeMyTrip",
-  goibibo: "Goibibo",
-  yatra: "Yatra",
-  cleartrip: "ClearTrip",
-  expedia: "Expedia",
-  bookingcom: "Booking.com",
-  agoda: "Agoda",
-  direct: "Direct",
-  other: "Other",
+  alhind: "AlHind",
+  akbar: "Akbar",
 };
 
-const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = false }) => {
+const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = false, categoryIcons, categoryColors }) => {
   // --------------------------------------------------------------
   // 1. Sort bookings by date descending (newest first)
   // --------------------------------------------------------------
@@ -66,6 +50,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
             <th className="py-3 px-4 text-left">Platform</th>
             <th className="py-3 px-4 text-left">Date</th>
             <th className="py-3 px-4 text-left">Base Pay</th>
+            <th className="py-3 px-4 text-left">Net Profit</th>
             <th className="py-3 px-4 text-left">Revenue</th>
             <th className="py-3 px-4 text-left">Status</th>
             <th className="py-3 px-4 text-right">Actions</th>
@@ -75,7 +60,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
         <tbody className={`divide-y ${darkMode ? "divide-gray-700" : "divide-gray-200"}`}>
           {sortedBookings.length === 0 ? (
             <tr>
-              <td colSpan={10} className={`text-center py-16 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+              <td colSpan={11} className={`text-center py-16 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                 <div className="flex flex-col items-center">
                   <div className={`w-20 h-20 rounded-full ${darkMode ? "bg-gray-700" : "bg-gray-50"} flex items-center justify-center mb-4`}>
                     <Package size={40} className={darkMode ? "text-gray-500" : "text-gray-400"} />
@@ -86,8 +71,8 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
             </tr>
           ) : (
             sortedBookings.map((booking, idx) => {
-              const cat = categoryConfig[booking.category] || categoryConfig.bus;
-              const Icon = cat.icon;
+              const Icon = categoryIcons[booking.category] || categoryIcons.bus;
+              const catColor = categoryColors[booking.category] || categoryColors.bus;
               const isConfirmed = booking.status === "confirmed";
 
               return (
@@ -113,7 +98,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
                   {/* Category Badge */}
                   <td className="py-3 px-4">
                     <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cat.color}`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${catColor}`}
                     >
                       <Icon size={14} />
                       {booking.category
@@ -126,7 +111,7 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
                   <td className={`py-3 px-4 text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                     <div className="flex items-center gap-1.5">
                       <Globe size={14} className={darkMode ? "text-gray-500" : "text-gray-400"} />
-                      <span className="capitalize">
+                      <span>
                         {platformLabels[booking.platform] || booking.platform || "—"}
                       </span>
                     </div>
@@ -142,6 +127,14 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
                     <div className="flex items-center gap-1">
                       <IndianRupee size={14} className={darkMode ? "text-gray-500" : "text-gray-400"} />
                       ₹{Number(booking.basePay || 0).toFixed(2)}
+                    </div>
+                  </td>
+
+                  {/* Net Profit */}
+                  <td className={`py-3 px-4 text-sm font-semibold ${darkMode ? "text-emerald-400" : "text-green-700"}`}>
+                    <div className="flex items-center gap-1">
+                      <IndianRupee size={14} className={darkMode ? "text-emerald-400" : "text-green-700"} />
+                      ₹{Number(booking.netProfit || 0).toFixed(2)}
                     </div>
                   </td>
 

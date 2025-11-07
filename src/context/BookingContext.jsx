@@ -128,20 +128,7 @@ export const BookingProvider = ({ children }) => {
       const saved = localStorage.getItem("bookings");
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      if (!Array.isArray(parsed)) return [];
-
-      // Migrate old data: rename baseAmount to basePay if needed
-      const migratedBookings = parsed.map(booking => ({
-        ...booking,
-        basePay: booking.baseAmount || booking.basePay || 0,
-      })).filter(booking => booking.id); // Ensure valid bookings
-
-      if (JSON.stringify(migratedBookings) !== JSON.stringify(parsed)) {
-        localStorage.setItem("bookings", JSON.stringify(migratedBookings));
-        toast.success("Data migrated successfully!");
-      }
-
-      return migratedBookings;
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       console.error("Failed to load bookings", e);
       toast.error("Failed to load saved data");
@@ -169,6 +156,8 @@ export const BookingProvider = ({ children }) => {
       platform = "",
       status = STATUS.PENDING,
       category = CATEGORY.FLIGHT,
+      totalRevenue, // Optional, but we'll recalculate for consistency
+      netProfit, // Optional, but we'll recalculate for consistency
     } = rawBooking;
 
     if (!customerName?.trim()) throw new Error("Customer name is required");
@@ -193,8 +182,13 @@ export const BookingProvider = ({ children }) => {
     if (["flight", "hotel", "cab"].includes(category) && !platform)
       throw new Error("Platform is required");
 
-    const totalRevenue = Number(basePay) + Number(commissionAmount) + Number(markupAmount);
-    const netProfit = Number(commissionAmount) + Number(markupAmount);
+    const totalRevenueCalc = Number(basePay) + Number(commissionAmount) + Number(markupAmount);
+    const netProfitCalc = Number(commissionAmount) + Number(markupAmount);
+
+    // Rare case check
+    if (Number(basePay) + Number(commissionAmount) === 0 && Number(markupAmount) > 0) {
+      console.warn("Rare case detected: Total revenue equals markup (basePay + commission = 0). Confirming business logic.");
+    }
 
     const newBooking = {
       id: `BK${Date.now()}${Math.floor(Math.random() * 1000)}`,
@@ -205,8 +199,8 @@ export const BookingProvider = ({ children }) => {
       basePay: Number(basePay),
       commissionAmount: Number(commissionAmount),
       markupAmount: Number(markupAmount),
-      totalRevenue: Number(totalRevenue.toFixed(2)),
-      netProfit: Number(netProfit.toFixed(2)),
+      totalRevenue: parseFloat(totalRevenueCalc.toFixed(2)),
+      netProfit: parseFloat(netProfitCalc.toFixed(2)),
       platform,
       status,
       category,
@@ -251,9 +245,9 @@ export const BookingProvider = ({ children }) => {
     const pending = bookings.filter((b) => b.status === STATUS.PENDING).length;
     const confirmed = bookings.filter((b) => b.status === STATUS.CONFIRMED).length;
     const cancelled = total - pending - confirmed;
-    const revenue = bookings.reduce((sum, b) => sum + b.totalRevenue, 0);
-    const netProfitTotal = bookings.reduce((sum, b) => sum + b.netProfit, 0);
-    const basePayTotal = bookings.reduce((sum, b) => sum + b.basePay, 0);
+    const revenue = bookings.reduce((sum, b) => sum + (b.totalRevenue || 0), 0);
+    const netProfitTotal = bookings.reduce((sum, b) => sum + (b.netProfit || 0), 0);
+    const basePayTotal = bookings.reduce((sum, b) => sum + (b.basePay || 0), 0);
 
     return { total, pending, confirmed, cancelled, revenue, netProfitTotal, basePayTotal };
   };

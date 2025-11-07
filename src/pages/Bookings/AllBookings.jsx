@@ -106,8 +106,9 @@ const AllBookings = () => {
     const confirmed = bookings.filter((b) => normalize(b.status) === "confirmed").length;
     const pending = bookings.filter((b) => normalize(b.status) === "pending").length;
     const revenue = bookings.reduce((sum, b) => sum + (b.totalRevenue || 0), 0);
+    const bookingProfit = bookings.reduce((sum, b) => sum + (b.netProfit || 0), 0);
     const expenseTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const netProfit = revenue - expenseTotal;
+    const netProfit = bookingProfit - expenseTotal;
     return { total, confirmed, pending, revenue, netProfit };
   }, [bookings, expenses]);
 

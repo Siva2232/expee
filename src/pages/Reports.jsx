@@ -101,8 +101,9 @@ const Reports = () => {
 
   // ────────────────────── CORE METRICS ──────────────────────
   const totalRevenue = filteredBookings.reduce((s, b) => s + (Number(b.totalRevenue) || 0), 0);
+  const bookingProfit = filteredBookings.reduce((s, b) => s + (Number(b.netProfit) || 0), 0);
   const totalExpense = filteredExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const netProfit = totalRevenue - totalExpense;
+  const netProfit = bookingProfit - totalExpense;
   const profitMargin = totalRevenue ? Number(((netProfit / totalRevenue) * 100).toFixed(1)) : 0;
   const bookingCount = filteredBookings.length;
   const avgBooking = bookingCount ? Math.round(totalRevenue / bookingCount) : 0;
@@ -166,7 +167,7 @@ const Reports = () => {
     const headers = "Type,Date,Description,Base Pay,Revenue,Amount,Category/Customer\n";
     const rows = [
       ...filteredBookings.map(b =>
-        `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName || ""},${b.basePay || 0},${b.totalRevenue || 0},,`
+        `Booking,${format(new Date(b.date), "yyyy-MM-dd")},${b.customerName || ""},${b.basePay || 0},${b.totalRevenue || 0},,${b.category || ""}`
       ),
       ...filteredExpenses.map(e =>
         `Expense,${format(new Date(e.date), "yyyy-MM-dd")},${e.description || ""},,,-${e.amount},${e.category || "Other"}`
@@ -195,23 +196,15 @@ const Reports = () => {
 
   // ────────────────────── PERFORMANCE METRICS ──────────────────────
   const performanceMetrics = useMemo(() => {
-    const totalDistance = filteredBookings.reduce((s, b) => s + (Number(b.distance) || 0), 0);
-    const totalFuel = filteredExpenses
-      .filter(e => e.category === "Fuel")
-      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    const fuelEfficiency = totalDistance && totalFuel ? (totalDistance / totalFuel).toFixed(1) : "0";
-
-    const driverEarnings = filteredBookings.reduce((s, b) => s + (Number(b.driverPay) || 0), 0);
-    const avgDriverMonth = driverEarnings
-      ? (driverEarnings / (dateRange === "thisMonth" ? 1 : dateRange === "lastMonth" ? 1 : 3)).toFixed(0)
-      : "0";
+    const avgNetProfitPerBooking = bookingCount ? (bookingProfit / bookingCount).toFixed(0) : 0;
+    const avgCommissionPerBooking = bookingCount ? (filteredBookings.reduce((s, b) => s + (Number(b.commissionAmount) || 0), 0) / bookingCount).toFixed(0) : 0;
 
     return [
-      { label: "Booking Conversion", value: `${bookingCount ? ((bookingCount / (bookingCount + 5)) * 100).toFixed(1) : 0}%`, change: "", icon: BarChart3 },
-      { label: "Fuel Efficiency", value: `${fuelEfficiency} km/L`, change: "", icon: Fuel },
-      { label: "Driver Earnings", value: `₹${Number(avgDriverMonth).toLocaleString()}`, change: "avg/month", icon: Briefcase },
+      { label: "Avg Net Profit/Booking", value: `₹${avgNetProfitPerBooking}`, change: "", icon: TrendingUp },
+      { label: "Avg Commission/Booking", value: `₹${avgCommissionPerBooking}`, change: "", icon: DollarSign },
+      { label: "Profit Margin", value: `${profitMargin}%`, change: "", icon: Target },
     ];
-  }, [filteredBookings, filteredExpenses, bookingCount, dateRange]);
+  }, [filteredBookings, bookingProfit, bookingCount, profitMargin]);
 
   // ────────────────────── RENDER ──────────────────────
   return (
@@ -347,7 +340,7 @@ const Reports = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-white/80 text-sm font-medium">{kpi.label}</p>
-                      <p className="text-2xl font-bold mt-1">₹{kpi.value.toLocaleString()}</p>
+                      <p className="text-2xl font-bold mt-1">₹{Number(kpi.value).toLocaleString()}</p>
                       {kpi.growth !== undefined && (
                         <p className="text-xs mt-1 flex items-center gap-1">
                           {kpi.growth > 0 ? <ArrowUpRight size={14} className="text-emerald-300" /> : <ArrowDownRight size={14} className="text-rose-300" />}
@@ -387,7 +380,7 @@ const Reports = () => {
                         <PieChart size={20} className="text-indigo-600" /> Profit Margin
                       </h3>
                       <ResponsiveContainer width="100%" height={300}>
-                        <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" data={[{ value: profitMargin }]}>
+                        <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" data={[{ value: Math.max(0, profitMargin) }]}>
                           <RadialBar dataKey="value" fill="#10b981" background />
                           <Tooltip />
                         </RadialBarChart>

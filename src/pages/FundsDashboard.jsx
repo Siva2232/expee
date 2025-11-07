@@ -46,6 +46,9 @@ const FundsDashboard = () => {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [selectedTags, setSelectedTags] = useState([]);
 
+  // Hardcoded current date to match dashboard consistency
+  const now = new Date('2025-11-07');
+
   // Filter confirmed bookings for revenue calculations
   const confirmedBookings = useMemo(() => 
     bookings.filter(b => b.status?.toLowerCase() === "confirmed"), 
@@ -62,7 +65,6 @@ const FundsDashboard = () => {
 
   // Enhanced Revenue by Period with Comparisons and Forecasts (using confirmed bookings)
   const revenueByPeriod = useMemo(() => {
-    const now = new Date();
     const dailyStart = startOfDay(now);
     const dailyEnd = endOfDay(now);
     const weeklyStart = startOfWeek(now, { weekStartsOn: 1 });
@@ -112,6 +114,47 @@ const FundsDashboard = () => {
     };
   }, [confirmedBookings]);
 
+  // Net Profit by Period (sum of b.netProfit for consistency with Dashboard)
+  const netProfitByPeriod = useMemo(() => {
+    const dailyStart = startOfDay(now);
+    const dailyEnd = endOfDay(now);
+    const weeklyStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weeklyEnd = endOfWeek(now, { weekStartsOn: 1 });
+    const monthlyStart = startOfMonth(now);
+    const monthlyEnd = endOfMonth(now);
+    const yearlyStart = startOfYear(now);
+    const yearlyEnd = endOfYear(now);
+
+    // Previous periods
+    const prevDailyStart = startOfDay(subDays(now, 1));
+    const prevDailyEnd = endOfDay(subDays(now, 1));
+    const prevWeeklyStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const prevWeeklyEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+    const prevMonthlyStart = startOfMonth(subMonths(now, 1));
+    const prevMonthlyEnd = endOfMonth(subMonths(now, 1));
+    const prevYearlyStart = startOfYear(subYears(now, 1));
+    const prevYearlyEnd = endOfYear(subYears(now, 1));
+
+    let daily = 0, prevDaily = 0, weekly = 0, prevWeekly = 0, monthly = 0, prevMonthly = 0, yearly = 0, prevYearly = 0;
+
+    confirmedBookings.forEach(b => {
+      const date = new Date(b.date);
+      const netProfit = Number(b.netProfit) || 0;
+
+      if (date >= dailyStart && date <= dailyEnd) daily += netProfit;
+      if (date >= weeklyStart && date <= weeklyEnd) weekly += netProfit;
+      if (date >= monthlyStart && date <= monthlyEnd) monthly += netProfit;
+      if (date >= yearlyStart && date <= yearlyEnd) yearly += netProfit;
+
+      if (date >= prevDailyStart && date <= prevDailyEnd) prevDaily += netProfit;
+      if (date >= prevWeeklyStart && date <= prevWeeklyEnd) prevWeekly += netProfit;
+      if (date >= prevMonthlyStart && date <= prevMonthlyEnd) prevMonthly += netProfit;
+      if (date >= prevYearlyStart && date <= prevYearlyEnd) prevYearly += netProfit;
+    });
+
+    return { daily, prevDaily, weekly, prevWeekly, monthly, prevMonthly, yearly, prevYearly };
+  }, [confirmedBookings]);
+
   // Period-specific expenses
   const getPeriodExpenses = (start, end) => {
     return expenses.reduce((total, e) => {
@@ -122,33 +165,43 @@ const FundsDashboard = () => {
   };
 
   const profit = useMemo(() => {
-    const now = new Date();
     const dailyExpenses = getPeriodExpenses(startOfDay(now), endOfDay(now));
     const weeklyExpenses = getPeriodExpenses(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }));
     const monthlyExpenses = getPeriodExpenses(startOfMonth(now), endOfMonth(now));
     const yearlyExpenses = getPeriodExpenses(startOfYear(now), endOfYear(now));
 
     return {
-      daily: revenueByPeriod.daily - dailyExpenses,
-      weekly: revenueByPeriod.weekly - weeklyExpenses,
-      monthly: revenueByPeriod.monthly - monthlyExpenses,
-      yearly: revenueByPeriod.yearly - yearlyExpenses,
+      daily: netProfitByPeriod.daily - dailyExpenses,
+      weekly: netProfitByPeriod.weekly - weeklyExpenses,
+      monthly: netProfitByPeriod.monthly - monthlyExpenses,
+      yearly: netProfitByPeriod.yearly - yearlyExpenses,
     };
-  }, [revenueByPeriod, expenses]);
+  }, [netProfitByPeriod, expenses]);
+
+  // Total net profit for header (all-time sum of netProfit - total expenses)
+  const netProfitTotal = useMemo(() => 
+    confirmedBookings.reduce((sum, b) => sum + (b.netProfit || 0), 0) - expenseTotal, 
+    [confirmedBookings, expenseTotal]
+  );
 
   // Enhanced Booking Stats (using confirmed bookings)
   const bookingStats = useMemo(() => {
     const total = revenueByPeriod.yearly;
     const avg = confirmedBookings.length ? Math.round(total / confirmedBookings.length) : 0;
     const highest = confirmedBookings.reduce((max, b) => Math.max(max, Number(b.totalRevenue) || 0), 0);
-    const todaysBookings = confirmedBookings.filter(b => isToday(new Date(b.date)));
+    const todaysBookings = confirmedBookings.filter(b => {
+      const date = new Date(b.date);
+      return date.getFullYear() === now.getFullYear() && 
+             date.getMonth() === now.getMonth() && 
+             date.getDate() === now.getDate();
+    });
     const avgBookingTime = confirmedBookings.length ? confirmedBookings.reduce((sum, b) => sum + (new Date(b.date).getHours() || 0), 0) / confirmedBookings.length : 0;
     return { total, avg, highest, count: confirmedBookings.length, todaysCount: todaysBookings.length, avgBookingTime };
-  }, [revenueByPeriod, confirmedBookings]);
+  }, [revenueByPeriod, confirmedBookings, now]);
 
   // Hourly data for daily (using confirmed bookings)
   const hourlyData = useMemo(() => {
-    const today = new Date();
+    const today = now;
     const hours = eachHourOfInterval({ start: startOfDay(today), end: endOfDay(today) });
     return hours.map(hour => {
       const hourBookings = confirmedBookings.filter(b => {
@@ -157,11 +210,11 @@ const FundsDashboard = () => {
       });
       return { hour: format(hour, 'HH:00'), revenue: hourBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0) };
     });
-  }, [confirmedBookings]);
+  }, [confirmedBookings, now]);
 
   // Day-by-day for weekly (using confirmed bookings)
   const dailyDataWeekly = useMemo(() => {
-    const week = eachDayOfInterval({ start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+    const week = eachDayOfInterval({ start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) });
     return week.map(day => {
       const dayBookings = confirmedBookings.filter(b => {
         const date = new Date(b.date);
@@ -169,13 +222,14 @@ const FundsDashboard = () => {
       });
       const dayRevenue = dayBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0);
       const dayExpenses = getPeriodExpenses(startOfDay(day), endOfDay(day));
-      return { day: format(day, 'EEE d'), revenue: dayRevenue, profit: dayRevenue - dayExpenses };
+      const dayNetProfit = dayBookings.reduce((sum, b) => sum + Number(b.netProfit), 0);
+      return { day: format(day, 'EEE d'), revenue: dayRevenue, profit: dayNetProfit - dayExpenses };
     });
-  }, [confirmedBookings, expenses]);
+  }, [confirmedBookings, expenses, now]);
 
   // Month-by-month for yearly (using confirmed bookings)
   const monthlyDataYearly = useMemo(() => {
-    const year = eachMonthOfInterval({ start: startOfYear(new Date()), end: endOfYear(new Date()) });
+    const year = eachMonthOfInterval({ start: startOfYear(now), end: endOfYear(now) });
     return year.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
@@ -184,10 +238,11 @@ const FundsDashboard = () => {
         return date >= monthStart && date <= monthEnd;
       });
       const monthRevenue = monthBookings.reduce((sum, b) => sum + Number(b.totalRevenue), 0);
+      const monthNetProfit = monthBookings.reduce((sum, b) => sum + Number(b.netProfit), 0);
       const monthExpenses = getPeriodExpenses(monthStart, monthEnd);
-      return { month: format(month, 'MMM'), revenue: monthRevenue, profit: monthRevenue - monthExpenses };
+      return { month: format(month, 'MMM'), revenue: monthRevenue, profit: monthNetProfit - monthExpenses };
     });
-  }, [confirmedBookings, expenses]);
+  }, [confirmedBookings, expenses, now]);
 
   // Goals
   const goals = useMemo(() => ({
@@ -258,7 +313,7 @@ const FundsDashboard = () => {
     ];
     const csv = headers + rows.join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    saveAs(blob, `financial-report-${format(new Date(), "yyyy-MM-dd")}.csv`);
+    saveAs(blob, `financial-report-${format(now, "yyyy-MM-dd")}.csv`);
   };
 
   return (
@@ -296,7 +351,7 @@ const FundsDashboard = () => {
                     <span className="text-blue-100">Bookings</span>
                   </div>
                   <div className="text-blue-100">
-                    Revenue: ₹{bookingStats.total.toLocaleString()} • Spent: ₹{expenseTotal.toLocaleString()} • Net Profit: ₹{(bookingStats.total - expenseTotal).toLocaleString()}
+                    Revenue: ₹{bookingStats.total.toLocaleString()} • Spent: ₹{expenseTotal.toLocaleString()} • Net Profit: ₹{netProfitTotal.toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -398,7 +453,7 @@ const FundsDashboard = () => {
                   profit={profit.daily}
                   bookingStats={bookingStats}
                   hourlyData={hourlyData}
-                  topBookings={getTopBookings(startOfDay(new Date()), endOfDay(new Date()))}
+                  topBookings={getTopBookings(startOfDay(now), endOfDay(now))}
                   goal={goals.daily}
                 />
               )}
@@ -409,7 +464,7 @@ const FundsDashboard = () => {
                   forecast={revenueByPeriod.forecastWeekly}
                   profit={profit.weekly}
                   dailyData={dailyDataWeekly}
-                  topBookings={getTopBookings(startOfWeek(new Date(), { weekStartsOn: 1 }), endOfWeek(new Date(), { weekStartsOn: 1 }))}
+                  topBookings={getTopBookings(startOfWeek(now, { weekStartsOn: 1 }), endOfWeek(now, { weekStartsOn: 1 }))}
                   goal={goals.weekly}
                 />
               )}
@@ -419,7 +474,7 @@ const FundsDashboard = () => {
                   prevRevenue={revenueByPeriod.prevMonthly}
                   forecast={revenueByPeriod.forecastMonthly}
                   profit={profit.monthly}
-                  topBookings={getTopBookings(startOfMonth(new Date()), endOfMonth(new Date()))}
+                  topBookings={getTopBookings(startOfMonth(now), endOfMonth(now))}
                   goal={goals.monthly}
                   bookings={confirmedBookings} // Pass confirmed bookings for heatmap
                 />
@@ -431,7 +486,7 @@ const FundsDashboard = () => {
                   forecast={revenueByPeriod.forecastYearly}
                   profit={profit.yearly}
                   monthlyData={monthlyDataYearly}
-                  topBookings={getTopBookings(startOfYear(new Date()), endOfYear(new Date()))}
+                  topBookings={getTopBookings(startOfYear(now), endOfYear(now))}
                   goal={goals.yearly}
                 />
               )}
@@ -485,7 +540,7 @@ const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hour
   <div className="space-y-6 daily-bg rounded-3xl p-6">
     <div className="flex justify-between items-center">
       <h2 className="text-2xl font-bold text-amber-800 flex items-center gap-3">
-        <Sun className="text-amber-600" /> Daily Timeline - {format(new Date(), "MMM d, yyyy")}
+        <Sun className="text-amber-600" /> Daily Timeline - {format(new Date('2025-11-07'), "MMM d, yyyy")}
       </h2>
       <div className="flex items-center gap-2 text-sm text-amber-700">
         <ClockIcon size={16} /> Live Updates
@@ -537,7 +592,7 @@ const DailyFunds = ({ revenue, prevRevenue, forecast, profit, bookingStats, hour
       <ul className="space-y-2">
         {topBookings.map((b, i) => (
           <li key={b.id} className="flex justify-between items-center p-2 bg-amber-50 rounded-lg">
-            <span>{b.customerName} - {format(parseISO(b.date), 'HH:mm')}</span>
+            <span>{b.customerName} - {format(new Date(b.date), 'HH:mm')}</span>
             <span className="font-bold text-emerald-600">₹{Number(b.totalRevenue).toLocaleString()}</span>
           </li>
         ))}
@@ -610,8 +665,8 @@ const WeeklyFunds = ({ revenue, prevRevenue, forecast, profit, dailyData, topBoo
 
 // === MONTHLY FUNDS - FULLY FIXED ===
 const MonthlyFunds = ({ revenue, prevRevenue, forecast, profit, topBookings, goal, bookings }) => {
+  const now = new Date('2025-11-07');
   const monthlyDailyData = useMemo(() => {
-    const now = new Date();
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -624,7 +679,7 @@ const MonthlyFunds = ({ revenue, prevRevenue, forecast, profit, topBookings, goa
       const rev = dayBookings.reduce((s, b) => s + Number(b.totalRevenue), 0);
       return { day: day.getDate(), revenue: rev };
     });
-  }, [bookings]);
+  }, [bookings, now]);
 
   const maxRevenue = Math.max(...monthlyDailyData.map(d => d.revenue), 1);
   const trendData = monthlyDailyData.map(d => ({ label: d.day, value: d.revenue }));
