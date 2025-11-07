@@ -45,7 +45,7 @@ const AppRoutes = () => {
             <Route path="/bookings" element={<AllBookings />} />
             <Route path="/bookings/track" element={<TrackBooking />} />
             <Route path="/bookings/add" element={<AddBooking />} />
-            <Route path="/customer-details" element={<CustomerDetails />} /> {/* Fixed */}
+            <Route path="/customers" element={<CustomerDetails />} /> {/* Fixed */}
             <Route path="/bookings/view/:id" element={<ViewBooking />} />
 
             {/* Funds + Expenses */}

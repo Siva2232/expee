@@ -30,7 +30,7 @@ const Sidebar = () => {
   const links = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Bookings", path: "/bookings", icon: Book },
-    { name: "Customer Details", path: "/customer-details", icon: User },
+    { name: "Customer Details", path: "/customers", icon: User },
     { name: "Funds", path: "/funds", icon: Wallet },
     { name: "Tasks", path: "/tasks", icon: CheckCircle },
 
