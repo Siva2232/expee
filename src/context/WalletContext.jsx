@@ -21,62 +21,71 @@ export const WalletProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // ✅ Save wallets to localStorage whenever wallet changes
+  // Save to localStorage
   useEffect(() => {
     localStorage.setItem("wallets", JSON.stringify(wallets));
   }, [wallets]);
 
-  // ✅ Save transactions to localStorage whenever transactions change
   useEffect(() => {
     localStorage.setItem("walletTransactions", JSON.stringify(transactions));
   }, [transactions]);
 
   const updateWallet = (walletKey, amount, operation = "add") => {
-    setWallets((prev) => ({
-      ...prev,
-      [walletKey]:
-        operation === "add"
-          ? Math.max(0, prev[walletKey] + amount)
-          : Math.max(0, prev[walletKey] - amount),
-    }));
+    setWallets((prev) => {
+      const current = prev[walletKey] ?? 0;
+      const updated = operation === "add" ? current + amount : current - amount;
+      return { ...prev, [walletKey]: Math.max(0, updated) };
+    });
   };
 
-  const addToWallet = (walletKey, amount) => {
+  // Add with logging
+  const addToWallet = (walletKey, amount, user = "System") => {
     if (!walletKey || amount <= 0) return;
     updateWallet(walletKey, amount, "add");
+    logTransaction(walletKey, amount, "credit", user);
   };
 
-  const deductFromWallet = (walletKey, amount) => {
+  // Deduct with logging + balance check
+  const deductFromWallet = (walletKey, amount, user = "System") => {
     if (!walletKey || amount <= 0) return;
-    if (wallets[walletKey] < amount) {
-      throw new Error(`Insufficient balance in ${walletKey}. Available: ₹${wallets[walletKey].toFixed(2)}, Required: ₹${amount.toFixed(2)}`);
+    const current = wallets[walletKey] ?? 0;
+    if (current < amount) {
+      throw new Error(`Insufficient balance in ${walletKey}. Available: ₹${current.toFixed(2)}, Required: ₹${amount.toFixed(2)}`);
     }
     updateWallet(walletKey, amount, "deduct");
+    logTransaction(walletKey, amount, "debit", user);
   };
 
+  // Log transaction
   const logTransaction = (walletKey, amount, operation, user = "Unknown") => {
     setTransactions((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        id: Date.now() + Math.random(),
         walletKey,
         amount,
-        operation,
+        operation, // "credit" or "debit"
         user,
         timestamp: new Date().toISOString(),
       },
     ]);
   };
 
-  // ✅ Derive display-ready data (do NOT store this formatted version)
+  // Safe wallet data
   const walletData = [
-    { name: "AlHind", amount: wallets.alhind, key: "alhind" },
-    { name: "Akbar", amount: wallets.akbar, key: "akbar" },
-    { name: "Office Fund", amount: wallets.office, key: "office" },
+    { name: "AlHind", amount: wallets.alhind ?? 0, key: "alhind" },
+    { name: "Akbar", amount: wallets.akbar ?? 0, key: "akbar" },
+    { name: "Office Fund", amount: wallets.office ?? 0, key: "office" },
   ];
 
   return (
-    <WalletContext.Provider value={{ walletData, addToWallet, deductFromWallet, logTransaction, transactions }}>
+    <WalletContext.Provider value={{ 
+      walletData, 
+      addToWallet, 
+      deductFromWallet, 
+      logTransaction, 
+      transactions 
+    }}>
       {children}
     </WalletContext.Provider>
   );
