@@ -56,14 +56,16 @@ export default function CustomerDetails() {
     return [...bookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }, [bookings]);
 
-  // All bookings for customer
+  // All bookings for customer - sorted by date descending
   const customerBookings = useMemo(() => {
     if (!latestCustomer) return [];
-    return bookings.filter(
+    const bookingsForCustomer = bookings.filter(
       (b) =>
         b.email.toLowerCase() === latestCustomer.email.toLowerCase() ||
         b.contactNumber === latestCustomer.contactNumber
     );
+    // Sort by date descending (newest first)
+    return [...bookingsForCustomer].sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [bookings, latestCustomer]);
 
   // Stats
@@ -182,7 +184,7 @@ export default function CustomerDetails() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-full">
                 <thead className="bg-gray-50/80 backdrop-blur text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <tr>
                     <th className="py-4 px-6 text-left">ID</th>
@@ -211,7 +213,7 @@ export default function CustomerDetails() {
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2">
                             <Phone size={15} className="text-gray-500" />
-                            <span className="font-medium">{b.contactNumber}</span>
+                            <span className="font-medium text-sm">{b.contactNumber}</span>
                             <button
                               onClick={() => copyToClipboard(b.contactNumber, b.id)}
                               className="p-1 rounded hover:bg-indigo-100 transition"

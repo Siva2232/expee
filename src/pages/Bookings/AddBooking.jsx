@@ -21,8 +21,10 @@ const categories = [
 
 const platforms = [
   { value: "", label: "Select Platform" },
-  { value: "alhind", label: "AlHind" },
-  { value: "akbar", label: "Akbar" },
+  { value: "Alhind", label: "AlHind" },
+  { value: "Akbar", label: "Akbar" },
+  { value: "Direct", label: "Direct" },
+
 ];
 
 // Country Codes with Flags
