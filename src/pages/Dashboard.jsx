@@ -10,7 +10,7 @@ import {
   TrendingUp, Calendar, DollarSign, Activity,
   Download, Search, Clock, UserCheck, FileText,
   ArrowUpRight, ArrowDownRight, Receipt, AlertTriangle,
-  Moon, Sun
+  Moon, Sun,IndianRupee
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -115,15 +115,16 @@ const Dashboard = () => {
     profit: calcTrend(currentNetProfit, previousNetProfit),
   };
 
-  const stats = [
-    { title: "Total Bookings", value: currentStats.count, trend: trends.bookings, icon: Calendar, gradient: "from-violet-500 to-purple-600" },
-    { title: "Total Revenue", value: `₹${currentStats.totalRevenue.toLocaleString()}`, trend: trends.revenue, icon: DollarSign, gradient: "from-emerald-500 to-teal-600" },
-    { title: "Base Amount Total", value: `₹${currentStats.totalBaseAmount.toLocaleString()}`, trend: null, icon: DollarSign, gradient: "from-cyan-500 to-blue-600" },
-    { title: "Avg Revenue", value: `₹${currentStats.avgRevenue.toLocaleString()}`, trend: trends.avgBooking, icon: TrendingUp, gradient: "from-cyan-500 to-blue-600" },
-    { title: "Highest Revenue", value: `₹${currentStats.highestRevenue.toLocaleString()}`, trend: trends.highest, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
-    { title: "Total Expenses", value: `₹${currentExpenseTotal.toLocaleString()}`, trend: trends.expenses, icon: Receipt, gradient: "from-rose-500 to-red-600" },
-    { title: "Net Profit", value: `₹${currentNetProfit.toLocaleString()}`, trend: trends.profit, icon: Activity, gradient: (currentNetProfit >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600") },
-  ];
+const stats = [
+  { title: "Total Bookings", value: currentStats.count, trend: trends.bookings, icon: Calendar, gradient: "from-violet-500 to-purple-600" },
+  { title: "Total Revenue", value: `₹${currentStats.totalRevenue.toLocaleString()}`, trend: trends.revenue, icon: IndianRupee, gradient: "from-emerald-500 to-teal-600" },
+  { title: "Base Amount Total", value: `₹${currentStats.totalBaseAmount.toLocaleString()}`, trend: null, icon: IndianRupee, gradient: "from-cyan-500 to-blue-600" },
+  { title: "Avg Revenue", value: `₹${currentStats.avgRevenue.toLocaleString()}`, trend: trends.avgBooking, icon: TrendingUp, gradient: "from-cyan-500 to-blue-600" },
+  { title: "Highest Revenue", value: `₹${currentStats.highestRevenue.toLocaleString()}`, trend: trends.highest, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
+  { title: "Total Expenses", value: `₹${currentExpenseTotal.toLocaleString()}`, trend: trends.expenses, icon: Receipt, gradient: "from-rose-500 to-red-600" },
+  { title: "Net Profit", value: `₹${currentNetProfit.toLocaleString()}`, trend: trends.profit, icon: Activity, gradient: (currentNetProfit >= 0 ? "from-lime-500 to-green-600" : "from-orange-500 to-red-600") },
+];
+
 
   /* ────────────────────── FILTERED BOOKINGS ────────────────────── */
   const filteredBookings = useMemo(() => {

@@ -128,7 +128,20 @@ export const BookingProvider = ({ children }) => {
       const saved = localStorage.getItem("bookings");
       if (!saved) return [];
       const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+
+      // Migrate old data: rename baseAmount to basePay if needed
+      const migratedBookings = parsed.map(booking => ({
+        ...booking,
+        basePay: booking.baseAmount || booking.basePay || 0,
+      })).filter(booking => booking.id); // Ensure valid bookings
+
+      if (JSON.stringify(migratedBookings) !== JSON.stringify(parsed)) {
+        localStorage.setItem("bookings", JSON.stringify(migratedBookings));
+        toast.success("Data migrated successfully!");
+      }
+
+      return migratedBookings;
     } catch (e) {
       console.error("Failed to load bookings", e);
       toast.error("Failed to load saved data");
@@ -150,7 +163,7 @@ export const BookingProvider = ({ children }) => {
       email,
       contactNumber,
       date,
-      baseAmount = 0,
+      basePay = 0,
       commissionAmount = 0,
       markupAmount = 0,
       platform = "",
@@ -168,7 +181,7 @@ export const BookingProvider = ({ children }) => {
 
     if (!date) throw new Error("Date is required");
 
-    if (baseAmount < 0) throw new Error("Base amount cannot be negative");
+    if (basePay < 0) throw new Error("Base pay cannot be negative");
     if (commissionAmount < 0) throw new Error("Commission cannot be negative");
     if (markupAmount < 0) throw new Error("Markup cannot be negative");
 
@@ -180,7 +193,7 @@ export const BookingProvider = ({ children }) => {
     if (["flight", "hotel", "cab"].includes(category) && !platform)
       throw new Error("Platform is required");
 
-    const totalRevenue = Number(baseAmount) + Number(commissionAmount) + Number(markupAmount);
+    const totalRevenue = Number(basePay) + Number(commissionAmount) + Number(markupAmount);
     const netProfit = Number(commissionAmount) + Number(markupAmount);
 
     const newBooking = {
@@ -189,7 +202,7 @@ export const BookingProvider = ({ children }) => {
       email: email.trim().toLowerCase(),
       contactNumber: contactNumber.trim(), // ✅ No validation applied
       date,
-      baseAmount: Number(baseAmount),
+      basePay: Number(basePay),
       commissionAmount: Number(commissionAmount),
       markupAmount: Number(markupAmount),
       totalRevenue: Number(totalRevenue.toFixed(2)),
@@ -240,9 +253,9 @@ export const BookingProvider = ({ children }) => {
     const cancelled = total - pending - confirmed;
     const revenue = bookings.reduce((sum, b) => sum + b.totalRevenue, 0);
     const netProfitTotal = bookings.reduce((sum, b) => sum + b.netProfit, 0);
-    const baseAmountTotal = bookings.reduce((sum, b) => sum + b.baseAmount, 0);
+    const basePayTotal = bookings.reduce((sum, b) => sum + b.basePay, 0);
 
-    return { total, pending, confirmed, cancelled, revenue, netProfitTotal, baseAmountTotal };
+    return { total, pending, confirmed, cancelled, revenue, netProfitTotal, basePayTotal };
   };
 
   return (

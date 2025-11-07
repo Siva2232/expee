@@ -12,7 +12,8 @@ import {
   XCircle,
   Phone,
   Globe,
-  DollarSign,
+  IndianRupee,
+  Package,
 } from "lucide-react";
 
 // === Category Icons & Colors ===
@@ -139,16 +140,16 @@ const BookingTable = ({ bookings = [], onUpdateStatus, onRemove, darkMode = fals
                   {/* Base Pay */}
                   <td className={`py-3 px-4 text-sm ${darkMode ? "text-gray-300" : "text-gray-700"}`}>
                     <div className="flex items-center gap-1">
-                      <DollarSign size={14} className={darkMode ? "text-gray-500" : "text-gray-400"} />
-                      {Number(booking.basePay || 0).toLocaleString()}
+                      <IndianRupee size={14} className={darkMode ? "text-gray-500" : "text-gray-400"} />
+                      ₹{Number(booking.basePay || 0).toFixed(2)}
                     </div>
                   </td>
 
                   {/* Total Revenue */}
                   <td className={`py-3 px-4 text-sm font-semibold ${darkMode ? "text-emerald-400" : "text-green-700"}`}>
                     <div className="flex items-center gap-1">
-                      <DollarSign size={15} />
-                      {Number(booking.totalRevenue || 0).toFixed(2)}
+                      <IndianRupee size={15} className={darkMode ? "text-emerald-400" : "text-green-700"} />
+                      ₹{Number(booking.totalRevenue || 0).toFixed(2)}
                     </div>
                   </td>
 

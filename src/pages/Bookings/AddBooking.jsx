@@ -6,7 +6,7 @@ import { useBooking, CATEGORY, STATUS } from "../../context/BookingContext";
 import { useWallet } from "../../context/WalletContext";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, Plus, User, Mail, Calendar, DollarSign, CheckCircle,
+  ArrowLeft, Plus, User, Mail, Calendar, IndianRupee, CheckCircle,
   Phone, Globe, Plane, Bus, Train, Car, Hotel, Clock, TrendingUp, ChevronDown, AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
@@ -50,7 +50,7 @@ export default function AddBooking() {
     contactNumber: "",
     selectedCountryCode: "+91", // Default India
     date: format(new Date(), "yyyy-MM-dd"),
-    baseAmount: "",
+    basePay: "",
     commissionAmount: "",
     markupAmount: "",
     platform: "",
@@ -68,11 +68,11 @@ export default function AddBooking() {
   const fullContact = `${form.selectedCountryCode} ${form.contactNumber}`.trim();
 
   const totalRevenue = useMemo(() => {
-    const base = parseFloat(form.baseAmount) || 0;
+    const base = parseFloat(form.basePay) || 0;
     const comm = parseFloat(form.commissionAmount) || 0;
     const mark = parseFloat(form.markupAmount) || 0;
     return (base + comm + mark).toFixed(2);
-  }, [form.baseAmount, form.commissionAmount, form.markupAmount]);
+  }, [form.basePay, form.commissionAmount, form.markupAmount]);
 
   const netProfit = useMemo(() => {
     const comm = parseFloat(form.commissionAmount) || 0;
@@ -96,8 +96,8 @@ export default function AddBooking() {
 
     if (!form.platform) e.platform = "Platform is required";
 
-    if (form.baseAmount && Number(form.baseAmount) < 0)
-      e.baseAmount = "Base amount cannot be negative";
+    if (form.basePay && Number(form.basePay) < 0)
+      e.basePay = "Base pay cannot be negative";
     if (form.commissionAmount && Number(form.commissionAmount) < 0)
       e.commissionAmount = "Commission cannot be negative";
     if (form.markupAmount && Number(form.markupAmount) < 0)
@@ -114,7 +114,7 @@ export default function AddBooking() {
     setSubmitting(true);
     setWalletError("");
     try {
-      const base = Number(form.baseAmount) || 0;
+      const base = Number(form.basePay) || 0;
       const comm = Number(form.commissionAmount) || 0;
       const mark = Number(form.markupAmount) || 0;
 
@@ -134,7 +134,7 @@ export default function AddBooking() {
         email: form.email.trim(),
         contactNumber: fullContact,
         date: form.date,
-        baseAmount: base,
+        basePay: base,
         commissionAmount: comm,
         markupAmount: mark,
         platform: form.platform,
@@ -293,16 +293,16 @@ export default function AddBooking() {
                 {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
               </div>
 
-              {/* Base Amount */}
+              {/* Base Pay */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><DollarSign size={18} /> Base Amount</label>
-                <input type="number" min="0" step="0.01" value={form.baseAmount} onChange={(e) => setForm({ ...form, baseAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="250.00" disabled={submitting} />
-                {errors.baseAmount && <p className="mt-1 text-sm text-red-600">{errors.baseAmount}</p>}
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><IndianRupee size={18} /> Base Pay</label>
+                <input type="number" min="0" step="0.01" value={form.basePay} onChange={(e) => setForm({ ...form, basePay: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="250.00" disabled={submitting} />
+                {errors.basePay && <p className="mt-1 text-sm text-red-600">{errors.basePay}</p>}
               </div>
 
               {/* Commission Amount */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><DollarSign size={18} /> Commission Amount</label>
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"><IndianRupee size={18} /> Commission Amount</label>
                 <input type="number" min="0" step="0.01" value={form.commissionAmount} onChange={(e) => setForm({ ...form, commissionAmount: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-base" placeholder="50.00" disabled={submitting} />
                 {errors.commissionAmount && <p className="mt-1 text-sm text-red-600">{errors.commissionAmount}</p>}
               </div>
@@ -344,8 +344,8 @@ export default function AddBooking() {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Base Amount:</span>
-                    <span className="font-medium">₹{form.baseAmount || "0.00"}</span>
+                    <span className="text-gray-600">Base Pay:</span>
+                    <span className="font-medium">₹{form.basePay || "0.00"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Commission:</span>
