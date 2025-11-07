@@ -70,8 +70,8 @@ export const WalletProvider = ({ children }) => {
 
   // ✅ Derive display-ready data (do NOT store this formatted version)
   const walletData = [
-    { name: "AlHind Agency", amount: wallets.alhind, key: "alhind" },
-    { name: "Akbar Agency", amount: wallets.akbar, key: "akbar" },
+    { name: "AlHind", amount: wallets.alhind, key: "alhind" },
+    { name: "Akbar", amount: wallets.akbar, key: "akbar" },
     { name: "Office Fund", amount: wallets.office, key: "office" },
   ];
 

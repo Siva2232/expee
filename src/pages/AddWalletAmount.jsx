@@ -7,8 +7,8 @@ import { useAuth } from "../context/AuthContext";
 import { ArrowLeft, Plus, Minus, DollarSign, CheckCircle, Wallet as WalletIcon, Clock, User } from "lucide-react";
 
 const walletOptions = [
-  { value: "alhind", label: "AlHind Agency" },
-  { value: "akbar", label: "Akbar Agency" },
+  { value: "alhind", label: "AlHind" },
+  { value: "akbar", label: "Akbar" },
   { value: "office", label: "Office Fund" },
 ];
 
